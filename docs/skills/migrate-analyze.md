@@ -21,12 +21,15 @@ behavioral contracts that must exist before target mapping or translation.
 
 **Required state:** all `.migration/` artifacts validate; state is `characterize` (or a
 validated resume to it); discovery records the source revision, supported build variants,
-public surfaces, dependencies, and characterization tasks.
+public surfaces, dependencies, and characterization tasks; `scope.json.source_snapshot`
+reconciles every declared source candidate with zero unresolved census items.
 
 **Context to read before starting:**
 
-1. `config.json` for selected profiles, roots, output profile, strategy, and project choices.
-2. `inventory.json` for stable source-unit IDs and reachability.
+1. `config.json` and `scope.json` for selected profiles, roots, output profile, strategy,
+   completion policy, global denominators, source snapshot, and project choices.
+2. `inventory.json` for stable source-unit IDs and reachability, plus
+   `target-inventory.json` to confirm target implementation has not started prematurely.
 3. `research/legacy-stack.md`, `dependency-map.md`, `risk-matrix.md`, and
    `characterization-plan.md` for discovered variants, boundaries, and hazards.
 4. Source-profile idioms, semantic-hazard guidance, and pair equivalence policy.
@@ -49,9 +52,10 @@ public surfaces, dependencies, and characterization tasks.
 
 ### Step 2: Collect Reproducible Source Evidence
 
-5. Prefer existing source tests. Record the exact build/test command, working directory,
-   environment/toolchain, source revision, selected tests, exit status, relevant output,
-   and checksums of fixtures or reports.
+5. Prefer existing source tests. Record the exact build/test `command`,
+   `working_directory`, environment/toolchain, source revision, selected tests, `exit_code`,
+   relevant output, and checksummed artifact path records. Do not store several commands or
+   working directories in one evidence record.
 6. Where source tests are absent or incomplete, add characterization at the narrowest safe
    seam using one or more of:
 
@@ -67,11 +71,13 @@ public surfaces, dependencies, and characterization tasks.
    numeric difference, error, exit status, encoding, or side effect merely to make tests pass.
 8. Store large raw results beneath `.migration/research/characterization/` with checksums.
    For every characterization run, create a schema-valid
-   `.migration/evidence/EVID-NNNN.json` with `phase: "characterize"`, `slice_id: null`, the
-   exact reproducible command, environment, raw artifact/checksum references, affected
-   `BEH` IDs, result, and UTC recording time. Reference those `EVID` IDs from the behavioral
-   contract and traceability link. Characterization evidence precedes slices; do not invent
-   a slice solely to give it identity.
+   `.migration/evidence/EVID-NNNN.json` using the v3 evidence contract: `phase:
+   "characterize"`, `slice_id: null`, one exact `command`, one project-root-relative
+   `working_directory`, its integer `exit_code`, environment, `artifacts` containing path and
+   SHA-256 pairs, affected `contracts`, status, and UTC `recorded_at`. Reference those `EVID`
+   IDs from the behavioral contract and traceability link. The untouched evidence template is
+   failing by design; only the recorded exit code and artifacts may justify `status: "pass"`.
+   Characterization evidence precedes slices; do not invent a slice solely to give it identity.
 
 ### Step 3: Characterize Behavior Completely
 
@@ -162,17 +168,23 @@ public surfaces, dependencies, and characterization tasks.
 21. Verify that every reachable source unit and every public/observable surface has at least
     one evidence-backed behavior contract. Unknown-reachability units need a contract or an
     explicit unresolved exception; approved dead-code links may be excepted.
-22. Stage contracts, inventory references, traceability, decisions, exceptions, analysis,
+22. Reconcile the global characterization denominators from `scope.json` and `inventory.json`.
+    Report declared, accounted, reachable, unknown, retained, removed, behavior-required,
+    characterized, evidence-passing, and remaining counts with stable IDs. `pending` or
+    `unknown` is never hidden by a percentage; retained or removed source is accounted only
+    when policy permits and is never counted as migrated.
+23. Stage contracts, scope/inventory references, traceability, decisions, exceptions, analysis,
     and state together. Validate every schema, evidence checksum, and cross-reference before
     atomic promotion.
-23. If the gate passes, apply `characterize -> map`. Report contract/evidence coverage,
-    known gaps, undefined/implementation-defined findings, unresolved risks, and the next
-    action: migrate-map.
+24. If the gate passes, apply `characterize -> map`. Report the global denominators, contract/
+    evidence coverage, known gaps, undefined/implementation-defined findings, unresolved risks,
+    selected completion claim, and the next action: migrate-map.
 
 ## Outputs
 
 - `.migration/behaviors/BEH-NNNN.json` — schema-valid observable contracts.
 - `.migration/inventory.json` — source units linked to their behavior IDs.
+- `.migration/scope.json` — reconciled source dispositions and characterization denominators.
 - `.migration/traceability.json` — source-to-behavior links or approved exceptions.
 - `.migration/analysis/characterization.md` — ID-bearing human analysis and evidence view.
 - `.migration/research/characterization/` — checksummed source observations and harness output.
@@ -182,8 +194,9 @@ public surfaces, dependencies, and characterization tasks.
 
 ## Success Criteria
 
-- Every reachable source unit and public behavior is covered by evidence-backed `BEH-NNNN`
-  contracts; exclusions are explicit, scoped, approved, and traceable.
+- Every reachable source unit and public behavior in the declared source census is covered by
+  evidence-backed `BEH-NNNN` contracts; exclusions are explicit, scoped, approved, traceable,
+  and reported outside the migrated numerator.
 - Source tests are used where available, with golden-master, differential, consumer, or
   static evidence filling justified gaps.
 - Ownership/RAII, concurrency, macros/templates, ABI/native dependencies, serialization,
@@ -191,7 +204,11 @@ public surfaces, dependencies, and characterization tasks.
   behavior are explicitly analyzed.
 - Intentional changes and unpreservable behavior have decisions, replacement expectations,
   impact, approvals, and exceptions rather than false equivalence claims.
-- Characterization evidence has `phase: "characterize"`, no slice reference, exact commands,
-  reproducible environment data, checksummed artifacts, and visible known gaps.
+- Each characterization evidence record has `phase: "characterize"`, no slice reference, one
+  exact `command`, one `working_directory`, its `exit_code`, reproducible environment data,
+  path/SHA-256 artifacts, and visible known gaps.
 - All artifacts and cross-references validate atomically, and successful state ends in `map`.
 - No target mapping or translation began before characterization passed.
+- Global declared, accounted, characterized, retained, removed, pending, unknown, and
+  evidence-passing denominators are reported with stable IDs; no slice-local result is called
+  whole-scope completion.

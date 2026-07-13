@@ -43,9 +43,22 @@ metadata in a migration project without changing its live `.migration/` record.
 
 ### Step 2: Validate the Target Before Planning Changes
 
-4. If `.migration/` exists, run the framework's complete migration validator against it.
+4. If `.migration/` exists, run the installed structural validator against the current state:
+
+   ```bash
+   python3 .migration-framework/bin/migrationctl.py validate .migration
+   ```
+
+   A pre-runtime installation will not contain that file. In that one compatibility case, run
+   the trusted framework checkout's legacy structural command instead:
+
+   ```text
+   python3 <framework-checkout>/agents/framework.py validate-migration <target-project>/.migration
+   ```
+
    Stop on an invalid schema, transition history, decision reference, or cross-artifact link.
-   A framework update is not a repair mechanism for project state.
+   A pass is not whole-scope completion, and a framework update is not a repair mechanism for
+   project state.
 5. Record a recursive checksum snapshot of `.migration/` after any separately approved
    decision work and immediately before the installer runs. The installer owns
    `.migration-framework/`; it must never write, delete, or normalize files in `.migration/`.
@@ -108,9 +121,11 @@ metadata in a migration project without changing its live `.migration/` record.
     After a successful major adoption, omit the now-unnecessary one-time `--allow-major` and
     `--decision` flags. Keep every ordinary configuration and bundle input unchanged. The
     dry-run must report no pending writes, deletions, conflicts, or configuration changes.
-16. If `.migration/` exists, validate its complete graph again and compare it with the
-    pre-upgrade checksum snapshot. Any installer-caused difference is a failed update even if
-    the installed guidance appears correct.
+16. If `.migration/` exists, run the newly installed
+    `python3 .migration-framework/bin/migrationctl.py validate .migration` again and compare the
+    current artifact graph with the pre-upgrade checksum snapshot. Any installer-caused
+    difference is a failed update even if the installed guidance appears correct. Structural
+    validation still does not certify whole-scope migration.
 17. Report the installed framework version, adapter, profiles, preserved or changed
     overrides, bundle digest, legacy-inference warnings, the explicit `forced_replacements`
     paths, and the migration compatibility result.

@@ -128,6 +128,12 @@ Do not require one test per method, one test file per production class, or unive
 coverage percentages. Tests protect behavior and boundaries; thresholds are profile- and
 risk-configured.
 
+These gates establish evidence for affected slices. They do not prove that every declared C++
+source item has a Java target disposition. Whole-scope claims require migrate-audit to reconcile
+the source snapshot, per-source dispositions, actual target inventory, traceability, plans, and
+current completion certificate. A clean Java build or 100% configured coverage is not 100%
+migrated scope.
+
 ## Output Specializations
 
 | Output | Portable architecture contract | Java specialization |

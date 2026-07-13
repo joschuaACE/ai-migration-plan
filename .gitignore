@@ -2,4 +2,4 @@
 .kiro/
 CLAUDE.md
 .compiled/
-agents/__pycache__
+**/__pycache__/

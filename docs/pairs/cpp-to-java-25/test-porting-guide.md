@@ -109,6 +109,13 @@ A source suite is ported when:
 - source-only gaps have new characterization where risk requires it; and
 - deterministic verification can reproduce both source baseline and target results.
 
+This is a suite-local claim, not whole-project completion. Discovery must reconcile every C++
+test target, custom runner, generated/parameterized case source, fixture, benchmark used as a
+contract, and supported platform configuration with the source census. Migrate-audit then proves
+that every discovered suite/test surface has a behavior and target-evidence disposition. An
+approved skipped, removed, unsupported, or retained source test may be accounted, but it does not
+increase the strict migrated numerator.
+
 ## Rule Provenance
 
 Shared metadata: `applicability` is test migration under pair `cpp-to-java-25`; `source` is

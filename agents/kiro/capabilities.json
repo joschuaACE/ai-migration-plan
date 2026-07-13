@@ -4,7 +4,7 @@
     "requirements": []
   },
   "adapter": "kiro",
-  "adapter_version": "2.0.0",
+  "adapter_version": "2.1.0",
   "evidence": {
     "last_reviewed": "2026-07-12",
     "url": "https://kiro.dev/docs/hooks/"
@@ -27,7 +27,8 @@
   "packaging": [
     "steering",
     "skills",
-    "hooks"
+    "hooks",
+    "runtime-validator"
   ],
   "schema_version": "2.0",
   "surfaces": [

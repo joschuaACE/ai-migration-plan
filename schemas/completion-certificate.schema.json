@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/completion-certificate.schema.json",
+  "title": "Machine-generated migration completion certificate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated", "migration_id", "framework_version", "stage", "claim", "state_revision", "source_digest", "target_digest", "migration_digest", "generated_at", "counts", "evidence", "certified"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "3.0"},
+    "generated": {"const": true},
+    "migration_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "framework_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "stage": {"enum": ["implementation", "decommission"]},
+    "claim": {"enum": ["accounted", "migrated"]},
+    "state_revision": {"type": "integer", "minimum": 0},
+    "source_digest": {"$ref": "#/$defs/sha256"},
+    "target_digest": {"$ref": "#/$defs/sha256"},
+    "migration_digest": {"$ref": "#/$defs/sha256"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_files", "excluded_files", "source_units", "accounted_units", "pending_units", "migrated_units", "replaced_units", "removed_units", "retained_units", "target_units", "test_units", "behaviors", "approved_behaviors", "plans", "approved_plans"],
+      "properties": {
+        "source_files": {"type": "integer", "minimum": 0},
+        "excluded_files": {"type": "integer", "minimum": 0},
+        "source_units": {"type": "integer", "minimum": 0},
+        "accounted_units": {"type": "integer", "minimum": 0},
+        "pending_units": {"type": "integer", "minimum": 0},
+        "migrated_units": {"type": "integer", "minimum": 0},
+        "replaced_units": {"type": "integer", "minimum": 0},
+        "removed_units": {"type": "integer", "minimum": 0},
+        "retained_units": {"type": "integer", "minimum": 0},
+        "target_units": {"type": "integer", "minimum": 0},
+        "test_units": {"type": "integer", "minimum": 0},
+        "behaviors": {"type": "integer", "minimum": 0},
+        "approved_behaviors": {"type": "integer", "minimum": 0},
+        "plans": {"type": "integer", "minimum": 0},
+        "approved_plans": {"type": "integer", "minimum": 0}
+      }
+    },
+    "evidence": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^EVID-[0-9]{4,}$"}},
+    "certified": {"const": true}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

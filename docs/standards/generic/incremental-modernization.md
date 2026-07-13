@@ -64,6 +64,15 @@ Before cutover, record:
 
 Cut over one independently reversible scope at a time. Preserve the legacy path until
 the observation window passes unless retaining it would itself create unacceptable risk.
+During a partial cutover, keep global lifecycle state at `approve` while recording
+`phase: "cut_over"` evidence. After its observation requirements, run the global audit and
+continue to `plan` while declared implementation work remains. A bounded cutover success is not
+a terminal or whole-project completion claim. Only certificate-gated final cutover enters
+global state `cut_over`.
+
+Final cutover is different: it requires the union of approved cutover scopes to cover the
+declared implementation denominator and a current passing implementation-stage completion
+certificate for the exact claim.
 
 ## Rollback
 
@@ -91,6 +100,11 @@ Decommission only after:
 - licenses, binaries, and platform-specific deployment assets are removed deliberately; and
 - a human approves the final loss of the legacy fallback.
 
+Terminal decommission is whole-scope only. Refresh the source and target snapshots after final
+asset work, reconcile every legacy asset and supported consumer, and require a current passing
+decommission-stage completion certificate. Strict migrated mode permits no retained source or
+native runtime, approved removal, pending/unknown item, or unverified trace.
+
 Removal evidence links back to the source units and behaviors it retires. “No recent
 traffic” alone is not proof that a public path is unreachable.
 
@@ -115,3 +129,4 @@ pattern description; `owner` is the generic framework profile. Row applicability
 | `GEN-STRAT-002` | Duplicate side effects can corrupt state while appearing equivalent. | Shadowing or dual writes | Plan and review checks | Side-effect isolation, idempotency, and reconciliation evidence | Framework schema v2 |
 | `GEN-STRAT-003` | Source control rollback does not reverse external state. | Every cutover | Cutover preflight | Tested operational rollback or forward-recovery plan | Framework schema v2 |
 | `GEN-STRAT-004` | Legacy removal destroys the final fallback and may strand unknown consumers. | Decommission | Human approval gate | Consumer, operations, data, and reachability evidence | Framework schema v2 |
+| `GEN-STRAT-005` | A bounded cutover does not close remaining migration scope. | Partial and final cutover routing | Global audit and lifecycle validation | Return-to-approve record or current implementation certificate | Framework schema v3 |

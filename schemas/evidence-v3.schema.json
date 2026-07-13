@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/evidence-v3.schema.json",
+  "title": "Reproducible verification evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "phase", "slice_id", "gate", "status", "command", "working_directory", "exit_code", "environment", "artifacts", "contracts", "recorded_at"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "3.0"},
+    "id": {"type": "string", "pattern": "^EVID-[0-9]{4,}$"},
+    "phase": {"enum": ["characterize", "verify", "cut_over", "decommission"]},
+    "slice_id": {"type": ["string", "null"], "pattern": "^SLICE-[0-9]{4,}$"},
+    "gate": {"type": "string", "minLength": 1},
+    "status": {"enum": ["pass", "fail", "waived"]},
+    "command": {"type": "string", "minLength": 1},
+    "working_directory": {"$ref": "#/$defs/relativePath"},
+    "exit_code": {"type": "integer", "minimum": 0},
+    "environment": {"type": "object", "additionalProperties": {"type": "string"}},
+    "artifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    },
+    "contracts": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^BEH-[0-9]{4,}$"}},
+    "recorded_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "relativePath": {"type": "string", "pattern": "^(?:\\.|(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+)$"}
+  }
+}

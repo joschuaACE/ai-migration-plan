@@ -25,6 +25,8 @@ does not itself cut over production traffic.
 - The plan has `status: verified`.
 - All required `EVID-NNNN` verification records pass and traceability links them.
 - `config.json` selects the output profile whose idioms and boundaries apply.
+- `scope.json` and `target-inventory.json` are current enough to report global denominators;
+  their structural validity does not imply whole-scope completion.
 
 Trust deterministic verification only for what it proved: commands ran in the recorded
 environment, required gates passed, and references exist. This review judges whether the
@@ -34,10 +36,17 @@ implementation preserves meaning and whether any modernization is appropriate.
 
 ### Step 1: Enter review and gather context
 
-1. Validate `.migration/`, then transition `state.json` from `verify` to `review`.
+1. Validate `.migration/`, then transition `state.json` from `verify` to `review` with the
+   installed runtime:
+
+   ```bash
+   python3 .migration-framework/bin/migrationctl.py validate .migration
+   python3 .migration-framework/bin/migrationctl.py transition --migration .migration --to review --reason "Begin judgment review for SLICE-NNNN"
+   ```
 2. Read the slice plan, source units, `BEH-NNNN` contracts, known gaps, target units and tests.
-3. Read traceability, deterministic evidence, accepted decisions, approved exceptions, and
-   the selected source/target/pair/output standards.
+3. Read scope policy and source dispositions, target inventory, traceability, deterministic
+   evidence, accepted decisions, approved exceptions, and the selected source/target/pair/
+   output standards.
 4. Read the slice diff and any coexistence, rollback, and consumer/deployment constraints.
 
 ### Step 2: Semantic fidelity review
@@ -144,8 +153,28 @@ Do not convert uncertain reasoning into a fabricated deterministic score.
    `state.json.completed_slices`, clear `active_slice`, and transition state from `review`
    to `approve`. Add the durable human approval reference to the plan's `approval_refs`.
    Stage and validate these mutations as one atomic update.
-3. Approval permits the next slice or a separately planned cutover; it does not merge, deploy,
-   route traffic, or decommission the legacy path automatically.
+3. Recompute the whole-scope denominators after approval:
+
+   ```bash
+   python3 .migration-framework/bin/migrationctl.py audit .migration --claim <accounted|migrated>
+   ```
+
+   Report source units, behaviors, plans, target/test units, approved behaviors/plans, trace
+   statuses, retained, removed, pending, unknown, unverified, and exception counts with stable
+   IDs. Slice approval does not merge, deploy, route traffic, or decommission the legacy path.
+4. If any required implementation work remains, cutover is not an available next action.
+   Transition `approve -> plan` and name the remaining IDs:
+
+   ```bash
+   python3 .migration-framework/bin/migrationctl.py transition --migration .migration --to plan --reason "Required declared-scope work remains after SLICE-NNNN approval"
+   ```
+
+   This branch is mandatory for any pending, unknown, unowned, unmapped, planned, implemented,
+   merely verified, or policy-incompatible retained/removed item.
+5. Only when the global audit has no remaining work may the project run migrate-audit with
+   implementation certification. Final cutover remains forbidden until a passing current
+   `.migration/completion-certificate.json` exists for the exact claim and
+   `stage: "implementation"`.
 
 **If NEEDS_FIXES:**
 
@@ -177,3 +206,6 @@ Do not convert uncertain reasoning into a fabricated deterministic score.
 - Deterministic verification is not duplicated or misrepresented as semantic judgment.
 - Human approval, remaining risk, coexistence, and rollback implications are explicit.
 - Plan, traceability, decisions/exceptions, review report, and lifecycle state agree.
+- Global denominators and remaining stable IDs are reported after approval.
+- Remaining declared-scope work forces `approve -> plan`; only a passing implementation-stage
+  migrate-audit certificate can make final cutover eligible.

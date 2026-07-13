@@ -24,9 +24,10 @@ an approved exception.
 
 **Context to read before starting:**
 
-1. `config.json`, especially `output_profile`, strategy, roots, and project decisions.
-2. `inventory.json`, every applicable `BEH-NNNN`, characterization `EVID-NNNN`, and
-   `traceability.json`.
+1. `config.json` and `scope.json`, especially `output_profile`, strategy, roots, completion
+   policy, global denominators, source snapshot, and project decisions.
+2. `inventory.json`, `target-inventory.json`, every applicable `BEH-NNNN`, characterization
+   `EVID-NNNN`, and `traceability.json`.
 3. Characterization analysis, dependency map, risk matrix, and source public-surface view.
 4. Generic boundary rules, selected target standards, pair mappings, selected output
    profile, and its target-specific profile document.
@@ -156,12 +157,17 @@ an approved exception.
     approved exception; every target unit has at least one source behavior or explicit new
     intentional-change decision; target dependencies obey the selected output profile; and
     no two mappings accidentally claim the same output path.
-18. If architecture choice, unsupported scope, or coexistence safety is unresolved,
+18. Reconcile the mapping view against the declared scope: report required behaviors, mapped
+    target/test responsibilities, retained, removed, excepted, pending, unknown, and unmapped
+    counts with stable IDs. Planned target IDs are not actual target inventory and do not count
+    as migrated.
+19. If architecture choice, unsupported scope, or coexistence safety is unresolved,
     transition `map -> blocked` with scoped exceptions and `resume_to: "map"`. A validator
     or mapping-generation failure transitions to `failed` with a scoped `quality-gate`
     exception, recovery diagnostics, and `resume_to: "map"`.
-19. Stage mapping, traceability, decisions, exceptions, and state; validate the complete
-    graph; then promote atomically. On success apply `map -> plan` and recommend migrate-plan.
+20. Stage mapping, traceability, decisions, exceptions, and state; validate the current
+    artifact graph; then promote atomically. Structural graph validity does not prove mapping
+    or full-scope completion. On success apply `map -> plan` and recommend migrate-plan.
 
 ## Outputs
 
@@ -175,7 +181,7 @@ an approved exception.
 ## Success Criteria
 
 - Every non-excepted source behavior maps to stable target and planned test IDs; every
-  approved omission remains traceable to an exception.
+  approved omission remains traceable to an exception and outside the migrated numerator.
 - Architecture follows the selected output profile: service, library, SDK, and CLI mappings
   do not leak incompatible structures into one another.
 - Mapping preserves characterized lifetime, concurrency, error, numeric, serialization,
@@ -187,3 +193,5 @@ an approved exception.
 - All mappings use stable IDs and all JSON/cross-references validate atomically.
 - No target implementation code was generated during mapping, and successful state ends in
   `plan`.
+- Global required, mapped, retained, removed, pending, unknown, and unmapped denominators are
+  explicit; planned target identities are never reported as actual migrated target units.

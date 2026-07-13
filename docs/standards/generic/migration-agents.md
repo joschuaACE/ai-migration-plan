@@ -18,6 +18,8 @@ Required properties:
 - exclusions include a reason and evidence;
 - conflicting build metadata is reported, not resolved by guesswork; and
 - platform and configuration variants remain distinct until their behavior is compared.
+- the deterministic source snapshot reconciles every candidate as inventoried, explicitly
+  excluded by approved scope, or unresolved; unresolved candidates block discovery completion.
 
 ## Characterization
 
@@ -45,6 +47,8 @@ identifiers. Workers must not append concurrently to the same artifact.
 
 Map source behaviors and units to target contracts, modules, and delivery artifacts.
 Plan independently verifiable slices around seams, not merely files or packages.
+Maintain a global ownership view in which every required behavior is approved, owned by one
+active/future slice, or reported as a blocking orphan.
 
 Each slice declares:
 
@@ -65,13 +69,17 @@ inventing behavior.
 Execution records actual files changed, commands run, results, new dependencies,
 assumptions, and deviations from the plan. It may not mark its own work verified or
 approved.
+Every actual target source, test, build, package, deployment, or retained-boundary path is
+reconciled with `target-inventory.json`; planned paths and untracked disk files are not evidence.
 
 ## Deterministic Verification
 
 Verification produces reproducible evidence. It runs the selected profile's build, tests,
 contract comparisons, static checks, dependency checks, architecture checks, and artifact
 inspection. Each evidence record includes the exact command or validator, environment,
-input checksum, output location, result, and timestamp.
+input checksum, result, and timestamp. A v3 record contains one exact `command`, one
+`working_directory`, its integer `exit_code`, and checksummed artifact path records. Several
+commands require several evidence records.
 
 Verification does not decide whether a semantic difference is desirable or whether a
 modernization is idiomatic. A non-deterministic or unavailable check is recorded as a gap,
@@ -89,6 +97,27 @@ Review evaluates questions that deterministic tools cannot settle:
 
 Review references verification evidence but does not rewrite it. Review produces a
 verdict, findings with stable identifiers, required actions, and approval identities.
+
+After every approval, review reports global source, behavior, plan, target/test, trace-status,
+exception, retained, removed, pending, unknown, and unverified denominators. If any required
+implementation work remains, it must route `approve -> plan`; cutover is not an alternative.
+
+## Whole-Scope Completion Audit
+
+Completion audit is independent of slice implementation and approval. It refreshes the
+deterministic source/target snapshots, validates the current artifact structure, and evaluates
+the selected `accounted` or strict `migrated` claim against the entire declared denominator.
+
+A progress audit names every remaining stable ID. Certification additionally binds the exact
+claim, stage, state revision, source/target/migration digests, counts, and evidence IDs in
+`.migration/completion-certificate.json`. Final cutover requires an implementation-stage
+certificate. Terminal decommission requires a fresh decommission-stage certificate. Any
+relevant state or workspace change makes the prior certificate stale.
+
+Accounted and migrated are never synonyms. Approved removals and retained source/native
+boundaries may be accounted when policy permits but remain outside the migrated numerator.
+Strict migrated certification requires pending, unknown, retained, removed, and unverified
+counts all equal zero.
 
 ## Recovery and Resume
 
@@ -115,3 +144,4 @@ Shared metadata: `source` is the framework v3 workflow and adapter-capability co
 | `GEN-WRK-002` | Concurrent writes create nondeterministic and corrupt state. | Parallel work | Artifact ownership validation | Declared scope and deterministic merge result | Framework schema v2 |
 | `GEN-WRK-003` | An executor cannot independently substantiate its own completion claim. | Every executed slice | State-machine validation | Separate execution, verification, and review records | Framework schema v2 |
 | `GEN-WRK-004` | Unsupported hooks are weaker controls, even if their prose is identical. | Adapter lacks an event or enforcement primitive | Capability/strictness validation | Failure or explicit installation warning | Framework schema v2 |
+| `GEN-WRK-005` | The worker that completes one slice cannot infer whole-product closure. | Approval, final cutover, and decommission | Independent global audit | Current stage-specific completion certificate and exact denominators | Framework schema v3 |

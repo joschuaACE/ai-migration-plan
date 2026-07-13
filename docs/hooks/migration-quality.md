@@ -58,3 +58,24 @@ Unsupported judgment hooks are never represented as command enforcement.
 - required: false
 - enforcement: judgment
 - description: Reviews behavioral-contract and test traceability without imposing file-count rules
+
+## migration-state-structural-validation
+
+- trigger: file-save
+- matcher: \.migration/(config|scope|state|inventory|target-inventory|traceability|completion-certificate)\.json|\.migration/(behaviors|decisions|plans|evidence|exceptions)/.*\.json
+- type: command
+- command: python3 .migration-framework/bin/migrationctl.py validate .migration
+- required: true
+- enforcement: deterministic
+- timeout: 30
+- description: Validates the current migration artifact structure and references after authoritative state saves; a pass is not a full-scope completion certificate
+
+## completion-claim-review
+
+- trigger: stop
+- matcher: .*
+- type: agent
+- prompt: Before ending, inspect the response for claims such as complete, done, fully migrated, 100%, foundation complete, ready for final cutover, or decommissioned. Require the narrowest truthful milestone and exact declared/accounted/migrated denominators. Structural validation, installation, initialization, a target foundation, a passing build, or one approved slice is not whole-scope completion. Accounted and migrated are separate; retained and approved-removed items never increase the migrated numerator. Strict 100% migrated requires pending, unknown, retained, removed, and unverified counts all equal zero. A final-cutover claim requires a current passing implementation-stage completion certificate, and terminal decommission requires a current passing decommission-stage certificate. If evidence is absent or stale, replace the unsupported claim with the remaining IDs and the next safe workflow.
+- required: false
+- enforcement: judgment
+- description: Prevents unsupported whole-project completion claims at the end of an agent turn

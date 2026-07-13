@@ -1,7 +1,7 @@
 {
   "$schema": "schemas/framework.schema.json",
   "schema_version": "2.0",
-  "framework_version": "3.0.0",
+  "framework_version": "3.1.0",
   "profile_contract_version": "2.0",
   "name": "ai-migration-framework",
   "default_pair": "cpp-to-java-25",
@@ -20,6 +20,7 @@
     "docs/standards/generic/architecture-rules.md",
     "docs/standards/generic/incremental-modernization.md",
     "docs/standards/generic/migration-agents.md",
+    "docs/standards/generic/migration-completeness.md",
     "docs/standards/generic/migration-philosophy.md",
     "docs/standards/generic/migration-state-files.md",
     "docs/standards/generic/workspace-containment.md"
@@ -33,6 +34,7 @@
     "docs/skills/migrate-execute.md",
     "docs/skills/migrate-verify.md",
     "docs/skills/migrate-review.md",
+    "docs/skills/migrate-audit.md",
     "docs/skills/migrate-cutover.md",
     "docs/skills/migrate-decommission.md",
     "docs/skills/migrate-resume.md",
@@ -128,7 +130,11 @@
     "schemas/plan.schema.json",
     "schemas/traceability.schema.json",
     "schemas/evidence.schema.json",
+    "schemas/evidence-v3.schema.json",
     "schemas/exception.schema.json",
+    "schemas/migration-scope.schema.json",
+    "schemas/target-inventory.schema.json",
+    "schemas/completion-certificate.schema.json",
     "schemas/fixture.schema.json"
   ],
   "state_machine": {

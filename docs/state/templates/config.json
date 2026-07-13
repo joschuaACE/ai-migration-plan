@@ -1,7 +1,7 @@
 {
   "$schema": "https://example.invalid/ai-migration-framework/schemas/migration-config.schema.json",
   "schema_version": "2.0",
-  "framework_version": "3.0.0",
+  "framework_version": "3.1.0",
   "profiles": {
     "source": "cpp",
     "target": "java-25",

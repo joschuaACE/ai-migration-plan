@@ -64,7 +64,8 @@ It also removes irrelevant conditional sections. Service instructions remain; li
 and CLI branches disappear.
 
 The result is a portable bundle containing standards, workflows, hooks, schemas, state
-templates, and provenance. Every input and output receives a checksum, and the bundle gets
+templates, provenance, and the installed whole-scope validator. Every input and output receives
+a checksum, and the bundle gets
 an aggregate digest. Identical inputs produce identical bundles. Compilation happens in a
 staging directory and is promoted atomically only after it succeeds. This is implemented in
 [`agents/framework.py`](agents/framework.py).
@@ -131,8 +132,8 @@ The similar names are intentional:
 
 | Directory | Managed by | Purpose |
 |---|---|---|
-| `.migration-framework/` | The framework installer and upgrader | Installed support files: ownership checksums, bundle manifest, schemas, blank state templates, and provenance |
-| `.migration/` | The migration workflows for this project | Live migration state: configuration, inventory, decisions, plans, evidence, traceability, and lifecycle history |
+| `.migration-framework/` | The framework installer and upgrader | Installed support files: ownership checksums, bundle manifest, schemas, blank state templates, provenance, and the runnable migration validator |
+| `.migration/` | The migration workflows for this project | Live migration state: configuration, scope snapshot, source/target inventories, decisions, plans, evidence, traceability, lifecycle history, and generated completion certificate |
 
 The installer creates `.migration-framework/`. The migrate-init workflow later creates
 `.migration/`. In particular, `.migration-framework/state/templates/` contains starting
@@ -145,17 +146,21 @@ The AI does not mark work complete merely because files appeared. It records str
 artifacts such as:
 
 - source inventory;
+- a checksummed source census and explicit source dispositions;
 - observable behavioral contracts;
-- target mappings;
+- concrete target/test inventory and mappings;
 - accepted decisions and exceptions;
 - migration slice plans;
 - test and command evidence;
 - source-to-target traceability; and
-- lifecycle state and complete transition history.
+- lifecycle state and complete transition history; and
+- separate accounted-versus-migrated completion counts.
 
 These files have stable IDs such as `SRC-0001`, `BEH-0001`, `SLICE-0001`, and `EVID-0001`.
 JSON Schemas and cross-reference validation catch missing evidence, invalid transitions,
-dangling references, plan cycles, or unapproved exceptions.
+dangling references, plan cycles, or unapproved exceptions. The installed validator additionally
+reconciles the workspace and refuses final cutover or decommission without a fresh generated
+certificate. A clean build or an approved slice cannot create that certificate by itself.
 
 ## 7. Installation and Upgrades Protect User Work
 

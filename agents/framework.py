@@ -619,8 +619,15 @@ def load_adapter_capabilities(adapter: str) -> dict[str, Any]:
         return {
             "schema_version": "2.0",
             "adapter": "portable",
-            "adapter_version": "2.0.0",
-            "packaging": ["standards", "workflows", "hooks", "schemas", "provenance"],
+            "adapter_version": "2.1.0",
+            "packaging": [
+                "standards",
+                "workflows",
+                "hooks",
+                "schemas",
+                "provenance",
+                "runtime-validator",
+            ],
             "hook_capabilities": {"command": False, "agent_judgment": False, "events": [], "unsupported_policy": "warn-and-instruct"},
         }
     if adapter not in {"kiro", "claude", "codex"}:
@@ -652,6 +659,7 @@ def compile_bundle(
             FRAMEWORK_MANIFEST,
             ROOT / "agents" / "compile-engine.py",
             ROOT / "agents" / "framework.py",
+            ROOT / "agents" / "migration_runtime.py",
             ROOT / "docs" / "profiles" / "sources" / composition.source["id"] / "profile.json",
             ROOT / "docs" / "profiles" / "targets" / composition.target["id"] / "profile.json",
             ROOT / "docs" / "profiles" / "pairs" / composition.pair["id"] / "profile.json",
@@ -690,6 +698,19 @@ def compile_bundle(
             destination = stage / "state" / "templates" / source.name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
+
+        runtime_source = ROOT / "agents" / "migration_runtime.py"
+        runtime_destination = stage / "bin" / "migrationctl.py"
+        runtime_destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(runtime_source, runtime_destination)
+        runtime_manifest = {
+            "schema_version": "1.0",
+            "framework_version": composition.framework["framework_version"],
+            "state_machine": composition.framework["state_machine"],
+        }
+        (stage / "runtime.json").write_text(
+            pretty_json(runtime_manifest), encoding="utf-8", newline="\n"
+        )
 
         for path in sorted(stage.rglob("*")):
             if path.is_file():
@@ -829,14 +850,40 @@ def run_hook_parser(adapter: str, hooks_dir: Path, *, strict: bool = False) -> t
     return pretty_json(parsed).encode("utf-8"), process.stderr.strip()
 
 
+def _require_runtime_bundle_artifacts(bundle: Path) -> None:
+    required_runtime_artifacts = ("runtime.json", "bin/migrationctl.py")
+    missing_runtime_artifacts = [
+        relative
+        for relative in required_runtime_artifacts
+        if not (bundle / relative).is_file() or (bundle / relative).is_symlink()
+    ]
+    if missing_runtime_artifacts:
+        raise FrameworkError(
+            "bundle is missing required runtime artifact(s): "
+            + ", ".join(missing_runtime_artifacts)
+            + "; recompile the bundle with the current framework"
+        )
+
+
 def _common_install_files(bundle: Path) -> dict[str, bytes]:
-    files: dict[str, bytes] = {
-        f"{OWNERSHIP_DIR}/bundle-manifest.json": (bundle / "manifest.json").read_bytes(),
-    }
-    for prefix in ("schemas", "state/templates", "provenance"):
-        for source in _bundle_files(bundle, prefix):
-            relative = source.relative_to(bundle).as_posix()
-            files[f"{OWNERSHIP_DIR}/{relative}"] = source.read_bytes()
+    _require_runtime_bundle_artifacts(bundle)
+    try:
+        files: dict[str, bytes] = {
+            f"{OWNERSHIP_DIR}/bundle-manifest.json": (bundle / "manifest.json").read_bytes(),
+            f"{OWNERSHIP_DIR}/runtime.json": (bundle / "runtime.json").read_bytes(),
+            f"{OWNERSHIP_DIR}/bin/migrationctl.py": (
+                bundle / "bin" / "migrationctl.py"
+            ).read_bytes(),
+        }
+        for prefix in ("schemas", "state/templates", "provenance", "bin"):
+            for source in _bundle_files(bundle, prefix):
+                relative = source.relative_to(bundle).as_posix()
+                files[f"{OWNERSHIP_DIR}/{relative}"] = source.read_bytes()
+    except FileNotFoundError as exc:
+        raise FrameworkError(
+            "bundle changed while preparing required installation artifacts; "
+            "recompile the bundle and retry"
+        ) from exc
     return files
 
 
@@ -859,6 +906,8 @@ with the `{manifest['profiles']['output']}` output profile.
 - `docs/standards/` contains generic, source, target, pair, and output-profile rules.
 - `docs/skills/` contains portable lifecycle workflows.
 - `.migration-framework/schemas/` defines all machine-validated state artifacts.
+- `.migration-framework/bin/migrationctl.py` validates scope, applies guarded transitions,
+  and issues completion certificates.
 
 Read the relevant standards and workflow before changing migration code. Verification
 must create reproducible evidence; semantic fidelity and design judgment belong to review.
@@ -1528,6 +1577,7 @@ def install_compiled_bundle(
         raise FrameworkError(
             f"bundle adapter capabilities no longer match agents/{adapter}/capabilities.json; recompile before installation"
         )
+    _require_runtime_bundle_artifacts(bundle)
     current_ownership = load_ownership(target)
     next_overrides, next_inferred_keys = manifest_project_overrides(manifest)
     next_configuration = configuration_snapshot(manifest, next_overrides)
@@ -2270,6 +2320,12 @@ def transition_state(
     blockers: Sequence[str] = (),
 ) -> dict[str, Any]:
     path = path.expanduser().resolve()
+    if destination in {"cut_over", "decommissioned"}:
+        raise FrameworkError(
+            f"state-only transition to {destination!r} is forbidden; use the installed "
+            "migrationctl.py transition --migration command so the complete scope, "
+            "evidence graph, and completion certificate are validated"
+        )
     errors = validate_artifact(path)
     if errors:
         raise FrameworkError("state artifact is invalid:\n  " + "\n  ".join(errors))

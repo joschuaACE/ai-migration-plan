@@ -3,6 +3,11 @@
 Define deterministic signals for identifying [LANGUAGE_NAME] source, build variants,
 generated inputs, releasable artifacts, dependencies, tests, and platform behavior.
 
+Apply these signals to every path in the deterministic `scope.json.source_snapshot`. Reconcile
+each path with stable source inventory or an exception-backed excluded-file record. Unknown or
+unclassified paths block discovery; familiar extensions and successful builds must not define a
+smaller denominator implicitly.
+
 ## Language and Version Detection
 
 | Signal | Meaning | Confidence/conflict policy |

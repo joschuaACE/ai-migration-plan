@@ -21,15 +21,17 @@ and cutover.
 
 **Required state:** the active `SLICE-NNNN` JSON and Markdown plans, all referenced source
 units, behavioral contracts, characterization evidence, target/test mappings, decisions,
-exceptions, and dependencies validate; state is `execute` (or a validated resume to it).
+exceptions, dependencies, `scope.json`, and `target-inventory.json` validate; state is
+`execute` (or a validated resume to it).
 
 ## Procedure
 
 ### Step 1: Revalidate the Execution Contract
 
-1. Validate the full `.migration/` graph and confirm the source revision, plan checksum,
+1. Validate the current `.migration/` artifact graph and confirm the source revision, plan checksum,
    selected profiles, `{source_root}`, and `{target_root}` have not drifted. Resolve the target
-   root from the project root without following a symlink outside the project.
+   root from the project root without following a symlink outside the project. Structural graph
+   validity is not a claim that the declared scope is fully implemented.
 2. Read the active plan completely with every referenced {{source_language}} source unit,
    `BEH`, characterization `EVID`, mapping, target/pair/output standards, decision, and
    exception. Do not translate from the plan summary alone.
@@ -163,12 +165,20 @@ exceptions, and dependencies validate; state is `execute` (or a validated resume
     mechanism, exact command working directories and commands, feedback, generated artifacts,
     deviations, unresolved risks, and rollback checkpoint. Every uncertainty must reference
     a `DEC` or `EXC` ID.
-25. Update `traceability.json` links to `implemented`, add actual target/test IDs, and preserve
+25. Reconcile every created or changed target source, test, build, packaging, generated,
+    deployment, and retained-boundary asset into `.migration/target-inventory.json` with its
+    stable target identity, project-root-relative path, kind, truthful lifecycle status, and
+    SHA-256 checksum. A path on disk that is absent from target inventory is unresolved; a
+    planned target ID without an actual target-inventory entry is not implementation evidence.
+26. Update `traceability.json` links to `implemented`, add actual target/test IDs, and preserve
     characterization evidence, decisions, and exceptions. Do not add verification evidence
     that has not been produced.
-26. Keep the plan status `in-progress` until deterministic verification changes it. Do not
+27. Keep the plan status `in-progress` until deterministic verification changes it. Do not
     add the slice to `completed_slices`, approve it, select target traffic, or remove legacy.
-27. Stage execution report, plan, traceability, and state changes; validate all references
+28. Report global declared, accounted, implemented, verified, approved, retained, removed,
+    pending, unknown, unverified, and remaining-slice denominators. The active slice may be
+    fully implemented while global migration remains incomplete.
+29. Stage execution report, target inventory, plan, traceability, and state changes; validate all references
     and target-file ownership; promote atomically. Keep lifecycle state at `execute` and
     recommend migrate-verify with the active slice ID; migrate-verify revalidates the handoff
     and owns the `execute -> verify` transition before running authoritative gates.
@@ -180,6 +190,7 @@ exceptions, and dependencies validate; state is `execute` (or a validated resume
 - Slice-scoped coexistence, observability, and rollback mechanisms with legacy still active.
 - `.migration/plans/SLICE-NNNN-execution.md` — ID-bearing execution and deviation record.
 - `.migration/traceability.json` — implemented target/test links.
+- `.migration/target-inventory.json` — actual target assets, statuses, and checksums.
 - Updated plan, decision, exception, and state artifacts as required.
 - `.migration/state.json` — remains valid at `execute` for a successful handoff, or records a
   validated transition to `blocked` or `failed`.
@@ -201,6 +212,8 @@ exceptions, and dependencies validate; state is `execute` (or a validated resume
 - Legacy remains selectable; coexistence and rollback controls exist; no cutover or
   decommission occurred.
 - No untracked uncertainty or false completion claim remains.
+- Actual target inventory reconciles every slice-owned target asset, and global remaining-work
+  counts are explicit; file presence or successful execution feedback is not full-scope proof.
 - Successful execution hands off from valid state `execute`; migrate-verify performs the
   `execute -> verify` transition, and deterministic verification and judgment review remain
   separate subsequent gates.

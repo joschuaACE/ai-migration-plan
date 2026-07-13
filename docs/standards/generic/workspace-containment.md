@@ -39,8 +39,9 @@ or on unrelated user work at a planned destination.
 
 Verification runs the exact recorded command from the exact recorded working directory. A
 successful equivalent command from another directory is not evidence for the configured
-command. Evidence records the working directory, command, exit status, and target-contained
-artifacts or reports needed to reproduce the result.
+command. Each v3 evidence record stores one `working_directory`, one `command`, its integer
+`exit_code`, and target-contained artifact/report objects containing a project-root-relative
+`path` and SHA-256. Several commands or directories require separate evidence records.
 
 ## Rule Provenance
 
@@ -50,7 +51,7 @@ generic framework profile. These rules apply to every migration.
 | Rule ID | Rationale | Enforcement | Required evidence | Reviewed for |
 |---|---|---|---|---|
 | `GEN-WORKSPACE-001` | A declared target boundary is ineffective when build or product files spill into the project root. | Plan and execution path preflight | Resolved target path inventory | Framework schema v2 |
-| `GEN-WORKSPACE-002` | A command proven from a different directory may exercise a different build. | Verification gate | Exact working directory, command, exit status, and artifacts | Framework schema v2 |
+| `GEN-WORKSPACE-002` | A command proven from a different directory may exercise a different build. | Verification gate | Exact singular working directory/command, exit code, and checksummed artifacts | Framework schema v3 |
 | `GEN-WORKSPACE-003` | Shared orchestration changes repository-wide ownership and rollback scope. | Decision validation | Accepted topology decision and affected-path list | Framework schema v2 |
 
 The canonical metadata format and change policy are defined in

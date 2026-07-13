@@ -3,6 +3,12 @@
 Reference material for identifying build systems, output types, language standard, dependencies,
 and platform conditionals in a C++ source tree.
 
+Begin from the deterministic `scope.json.source_snapshot`, not an extension-only search. Reconcile
+every snapshotted path with stable source inventory or an exception-backed excluded-file record.
+Build metadata and compilation databases refine classification and reachability; they do not
+silently remove files from the declared denominator. Unknown or unclassified paths block the
+discovery transition.
+
 ---
 
 ## Build System Detection

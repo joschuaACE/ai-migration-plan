@@ -25,6 +25,9 @@ performing discovery, translation, or target implementation work.
 - **Quality-gate policy** (required) — output-profile required checks plus a risk-approved
   coverage metric (`behavioral-contract`, `changed-code`, `public-api`, or `none`), threshold
   where applicable, and rationale. Automation must not invent the threshold.
+- **Completion policy** (required) — the declared product boundary and whether the requested
+  claim is `accounted` or strict `migrated`. Strict migrated scope does not permit retained,
+  removed, pending, unknown, or unverified items at certification time.
 - **--auto flag** (optional) — accept only profile defaults that require no project judgment.
   It must not invent architecture, compatibility, cutover, or risk decisions.
 
@@ -50,20 +53,30 @@ performing discovery, translation, or target implementation work.
    risk-approved coverage metric, threshold, and rationale. `none` is allowed only with a
    specific rationale and does not waive behavioral-contract evidence; a metric other than
    `none` requires an explicit numeric threshold before configuration can be valid.
+7. Define the initial completion policy in `scope.json`: mode, required `accounted` or strict
+   `migrated` claim, approved-removal policy, boundary decision IDs, and source root for the
+   blank source snapshot. `whole-source-root` normally uses an empty boundary-decision list.
+   `bounded` requires one or more accepted `DEC-NNNN` records with durable human approvals;
+   automation must not infer or self-approve a narrower source boundary.
+   Record initial product, supported-variant/platform, consumer, public/operational-surface, and
+   proposed-exclusion assumptions as accepted initialization decisions; discovery will confirm
+   them in inventory and research. This is not permission to omit inconvenient products. Mixed
+   products assigned to separate migrations require an umbrella decision that accounts for
+   every product.
 
 ### Step 2: Allocate Stable Identity
 
-7. Select one `migration_id` and retain it for the lifetime of the migration. Do not derive
+8. Select one `migration_id` and retain it for the lifetime of the migration. Do not derive
    artifact identity from a mutable path, package, phase number, or timestamp.
-8. Use monotonically allocated identifiers within each artifact class:
+9. Use monotonically allocated identifiers within each artifact class:
    `SRC-NNNN`, `BEH-NNNN`, `TGT-NNNN`, `TEST-NNNN`, `DEC-NNNN`, `SLICE-NNNN`,
    `EVID-NNNN`, and `EXC-NNNN`. An ID is never reused after rejection, removal, rename, or
    supersession.
-9. Timestamps are UTC RFC 3339 values. They record events but never act as identity.
+10. Timestamps are UTC RFC 3339 values. They record events but never act as identity.
 
 ### Step 3: Stage the Authoritative State
 
-10. Create a staging directory next to `.migration/` with these directories:
+11. Create a staging directory next to `.migration/` with these directories:
 
    ```text
    .migration/
@@ -78,7 +91,7 @@ performing discovery, translation, or target implementation work.
    └── research/
    ```
 
-11. Instantiate the bundle-owned JSON templates and preserve their `$schema` and
+12. Instantiate the bundle-owned JSON templates and preserve their `$schema` and
     `schema_version` fields. In an installed target, read them from
     `.migration-framework/state/templates/` and validate against
     `.migration-framework/schemas/`. In a portable bundle, the corresponding directories
@@ -88,39 +101,51 @@ performing discovery, translation, or target implementation work.
     - `config.json` with `framework_version`, the source/target/pair profile IDs,
       `output_profile`, strategy, `{source_root}`, `{target_root}`, `quality_gates`, project
       decision references, and validation status;
+    - `scope.json` with the migration ID, completion policy, declared source root, and blank
+      source snapshot/unit dispositions ready for deterministic discovery;
     - `state.json` with `status: "initialize"`, revision `0`, no active slice, no completed
       slices, and its initial transition from `null`;
     - `inventory.json` with the migration ID and an empty `units` array; and
+    - `target-inventory.json` with the migration ID and an empty `units` array; and
     - `traceability.json` with the migration ID and an empty `links` array.
 
-12. Store project choices requiring judgment as individual schema-valid
+13. Store project choices requiring judgment as individual schema-valid
     `.migration/decisions/DEC-NNNN.json` records. Profile selection is configuration;
     intentional behavior changes, exclusions, architecture variations, and strategy
     exceptions are decisions and must not be hidden in prose.
-13. Do not create target source files, a build skeleton, mappings, plans, or behavioral
+14. Do not create target source files, a build skeleton, mappings, plans, or behavioral
     equivalence claims during initialization. In particular, do not run
     `{{compile_command}}` until an output-profile-specific target structure exists. This
     preserves the required discovery and characterization gates before translation.
 
 ### Step 4: Validate and Promote Atomically
 
-14. Validate each staged JSON artifact against its declared schema, then validate the
-    complete staged cross-reference graph. A valid schema with a broken reference is still
-    a failed initialization.
-15. If validation fails, report every actionable diagnostic and delete only the staging
+15. Validate each staged JSON artifact against its declared schema, then validate the current
+    staged cross-reference graph. After promotion, the installed structural validator is:
+
+    ```bash
+    python3 .migration-framework/bin/migrationctl.py validate .migration
+    ```
+
+    Structural validity means only that the currently populated state conforms and references
+    resolve. Empty initialized inventories can be structurally valid and are not migration
+    completion evidence.
+16. If validation fails, report every actionable diagnostic and delete only the staging
     directory. Leave any prior `.migration/` state untouched.
-16. Atomically promote the staged directory to `.migration/` only after all validation
+17. Atomically promote the staged directory to `.migration/` only after all validation
     succeeds. Set `config.json.validation_status` and `state.json.validation_status` to
     `valid` in the promoted, revalidated artifact set.
 
 ### Step 5: Enter Discovery
 
-17. Apply the validated `initialize -> discover` transition. Increment the state revision,
+18. Apply the validated `initialize -> discover` transition. Increment the state revision,
     append the transition to `history`, and make it equal to `last_transition`. Do not edit
     only the status field.
-18. Report the selected profiles, roots, strategy, quality-gate policy, migration ID,
-    decision IDs, and validation result. The next action is migrate-detect.
-19. Explain the remaining lifecycle explicitly:
+19. Report the selected profiles, roots, strategy, quality-gate policy, completion policy,
+    migration ID, decision IDs, and structural validation result. State explicitly:
+    “framework installed; migration initialized; 0 source units migrated.” The next action is
+    migrate-detect.
+20. Explain the remaining lifecycle explicitly:
 
     ```text
     discover -> characterize -> map -> plan -> execute -> verify -> review
@@ -133,17 +158,23 @@ performing discovery, translation, or target implementation work.
 ## Outputs
 
 - `.migration/config.json` — schema-valid profile, strategy, root, and validation config.
+- `.migration/scope.json` — schema-valid completion policy and blank discovery snapshot.
 - `.migration/state.json` — revisioned state transitioned from `initialize` to `discover`.
 - `.migration/inventory.json` — empty schema-valid source inventory ready for discovery.
+- `.migration/target-inventory.json` — empty schema-valid actual-target inventory.
 - `.migration/traceability.json` — empty schema-valid cross-reference graph.
 - `.migration/decisions/DEC-NNNN.json` — any explicit initialization decisions.
 - Empty artifact directories for later lifecycle stages; no target implementation files.
 
 ## Success Criteria
 
-- Every created JSON file validates against its declared v2 schema.
-- The complete `.migration/` graph validates before and after atomic promotion.
+- Every created JSON file validates against its declared schema version; v2 lifecycle artifacts
+  and v3 scope/target-inventory artifacts are not conflated.
+- The currently populated `.migration/` artifact graph validates before and after atomic
+  promotion; this is reported as structural initialization, never full-scope completion.
 - The migration, profiles, output profile, strategy, and roots are explicit and stable.
+- The declared completion policy and initial product boundary are explicit; strict `migrated`
+  mode has not been weakened by inferred exclusions.
 - `quality_gates` contains the selected profile's required checks and an explicit risk-based
   coverage policy; no missing threshold was guessed.
 - Existing migration state or unrelated project files were not overwritten.
@@ -153,3 +184,4 @@ performing discovery, translation, or target implementation work.
   fabricated during initialization.
 - The user knows migrate-detect is next and understands that verify and review are distinct
   gates before approval and cutover.
+- Initialization reports zero migrated source units and makes no percentage or completion claim.

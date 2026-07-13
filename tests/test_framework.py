@@ -395,29 +395,37 @@ class LifecycleConformanceTests(TemporaryDirectoryTestCase):
         self.assertIn("transition chain is discontinuous", diagnostics)
         self.assertIn("invalid transition 'discover'", diagnostics)
 
-    def test_cutover_can_roll_back_to_approval_before_terminal_decommission(self) -> None:
+    def test_state_only_cutover_and_decommission_are_forbidden(self) -> None:
         state_path = self.temp_path / "cutover-state.json"
         shutil.copyfile(GOLDEN_MIGRATION / "state.json", state_path)
-        cut_over = FRAMEWORK.transition_state(
-            state_path, "cut_over", "Approved cohort cutover started"
-        )
-        self.assertEqual(cut_over["status"], "cut_over")
-        rolled_back = FRAMEWORK.transition_state(
-            state_path, "approve", "Abort threshold triggered; route restored"
-        )
-        self.assertEqual(rolled_back["status"], "approve")
-        self.assertIsNone(rolled_back["active_slice"])
+        before = state_path.read_bytes()
+        with self.assertRaisesRegex(FRAMEWORK.FrameworkError, "state-only transition"):
+            FRAMEWORK.transition_state(
+                state_path, "cut_over", "Unvalidated cutover must not be possible"
+            )
+        self.assertEqual(state_path.read_bytes(), before)
 
-        cut_over_again = FRAMEWORK.transition_state(
-            state_path, "cut_over", "Cutover retried after corrective verification"
+        state = FRAMEWORK.read_json(state_path)
+        state["status"] = "cut_over"
+        state["revision"] += 1
+        cut_over_transition = {
+            "from": "approve",
+            "to": "cut_over",
+            "at": "2026-01-01T00:16:00Z",
+            "reason": "Validated cutover fixture",
+        }
+        state["last_transition"] = cut_over_transition
+        state["history"].append(cut_over_transition)
+        state_path.write_text(
+            FRAMEWORK.pretty_json(state), encoding="utf-8", newline="\n"
         )
-        self.assertEqual(cut_over_again["status"], "cut_over")
-        terminal = FRAMEWORK.transition_state(
-            state_path, "decommissioned", "Retention and final approvals satisfied"
-        )
-        self.assertEqual(terminal["status"], "decommissioned")
-        with self.assertRaisesRegex(FRAMEWORK.FrameworkError, "allowed: none"):
-            FRAMEWORK.transition_state(state_path, "approve", "Cannot leave terminal state")
+        self.assertEqual(FRAMEWORK.validate_artifact(state_path), [])
+        cut_over_before = state_path.read_bytes()
+        with self.assertRaisesRegex(FRAMEWORK.FrameworkError, "state-only transition"):
+            FRAMEWORK.transition_state(
+                state_path, "decommissioned", "Unvalidated terminal claim"
+            )
+        self.assertEqual(state_path.read_bytes(), cut_over_before)
 
 
 class InstallerConformanceTests(TemporaryDirectoryTestCase):
@@ -1004,13 +1012,30 @@ class InstallerConformanceTests(TemporaryDirectoryTestCase):
         self.make_v2_installation(target)
         migration = target / ".migration"
         shutil.copytree(GOLDEN_MIGRATION, migration)
-        FRAMEWORK.transition_state(
-            migration / "state.json", "cut_over", "Approved cutover completed"
-        )
-        FRAMEWORK.transition_state(
-            migration / "state.json",
-            "decommissioned",
-            "Legacy retention and removal obligations completed",
+        # This compatibility fixture represents a terminal record produced by an older
+        # framework release. New terminal transitions must use migrationctl and a certificate.
+        state_path = migration / "state.json"
+        state = FRAMEWORK.read_json(state_path)
+        for destination, timestamp, reason in (
+            ("cut_over", "2025-02-01T00:00:00Z", "Legacy approved cutover"),
+            (
+                "decommissioned",
+                "2025-02-02T00:00:00Z",
+                "Legacy retention and removal obligations completed",
+            ),
+        ):
+            transition = {
+                "from": state["status"],
+                "to": destination,
+                "at": timestamp,
+                "reason": reason,
+            }
+            state["status"] = destination
+            state["revision"] += 1
+            state["last_transition"] = transition
+            state["history"].append(transition)
+        state_path.write_text(
+            FRAMEWORK.pretty_json(state), encoding="utf-8", newline="\n"
         )
         self.assertEqual(FRAMEWORK.validate_migration_directory(migration), [])
         before = directory_bytes(migration)
@@ -1136,6 +1161,75 @@ class InstallerConformanceTests(TemporaryDirectoryTestCase):
         self.assertNotEqual(mismatch.returncode, 0)
         self.assertIn("bundle adapter is 'codex', not 'kiro'", mismatch.stderr)
 
+    def test_v3_install_rejects_bundles_without_runtime_artifacts_cleanly(self) -> None:
+        composition = FRAMEWORK.compose_profiles("cpp-to-java-25", "library")
+        for missing_relative in ("runtime.json", "bin/migrationctl.py"):
+            with self.subTest(missing_relative=missing_relative):
+                bundle = self.temp_path / (
+                    "missing-" + missing_relative.replace("/", "-")
+                )
+                manifest = FRAMEWORK.compile_bundle(
+                    composition, bundle, adapter="codex"
+                )
+                (bundle / missing_relative).unlink()
+                del manifest["generated_files"][missing_relative]
+                rewrite_bundle_manifest(bundle, manifest)
+                target = self.temp_path / (
+                    "target-" + missing_relative.replace("/", "-")
+                )
+                target.mkdir()
+
+                result = self.run_framework(
+                    "install",
+                    "--adapter",
+                    "codex",
+                    "--target",
+                    str(target),
+                    "--bundle",
+                    str(bundle),
+                )
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("missing required runtime artifact", result.stderr)
+                self.assertIn(missing_relative, result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
+
+    def test_legacy_bundle_capability_mismatch_precedes_runtime_requirement(self) -> None:
+        composition = FRAMEWORK.compose_profiles("cpp-to-java-25", "library")
+        bundle = self.temp_path / "legacy-no-runtime"
+        manifest = FRAMEWORK.compile_bundle(composition, bundle, adapter="codex")
+        for relative in ("runtime.json", "bin/migrationctl.py"):
+            (bundle / relative).unlink()
+            del manifest["generated_files"][relative]
+        manifest.pop("project_overrides")
+        manifest.pop("inferred_overrides")
+        manifest["schema_version"] = "2.0"
+        manifest["bundle_format_version"] = "2.0"
+        manifest["adapter_capabilities"] = dict(manifest["adapter_capabilities"])
+        manifest["adapter_capabilities"]["adapter_version"] = "2.0.0"
+        manifest["adapter_capabilities"]["packaging"] = [
+            capability
+            for capability in manifest["adapter_capabilities"]["packaging"]
+            if capability != "runtime-validator"
+        ]
+        rewrite_bundle_manifest(bundle, manifest)
+        target = self.temp_path / "legacy-no-runtime-target"
+        target.mkdir()
+
+        result = self.run_framework(
+            "install",
+            "--adapter",
+            "codex",
+            "--target",
+            str(target),
+            "--bundle",
+            str(bundle),
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("adapter capabilities no longer match", result.stderr)
+        self.assertNotIn("required runtime artifact", result.stderr)
+
     def test_dry_run_and_fresh_install_for_every_adapter(self) -> None:
         adapter_artifacts = {
             "kiro": ".kiro/hooks/migration-quality.json",
@@ -1178,6 +1272,19 @@ class InstallerConformanceTests(TemporaryDirectoryTestCase):
                 self.assertFalse(install_report["dry_run"])
                 self.assertEqual(install_report["conflicts"], [])
                 self.assertTrue((target / artifact).is_file())
+                runtime = target / ".migration-framework" / "bin" / "migrationctl.py"
+                runtime_manifest = target / ".migration-framework" / "runtime.json"
+                self.assertTrue(runtime.is_file())
+                self.assertTrue(runtime_manifest.is_file())
+                runtime_help = subprocess.run(
+                    [sys.executable, str(runtime), "--help"],
+                    cwd=target,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(runtime_help.returncode, 0, runtime_help.stderr)
+                self.assertIn("certify", runtime_help.stdout)
 
                 ownership = FRAMEWORK.load_ownership(target)
                 self.assertIsNotNone(ownership)

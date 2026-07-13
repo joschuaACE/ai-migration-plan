@@ -24,6 +24,9 @@ exercise. These principles apply to every language pair and output profile.
 7. **Prefer the smallest sufficient mechanism.** Reuse a selected platform capability or
    dependency when it satisfies the contract. Add new code or dependencies only after the
    behavioral and operational need is demonstrated.
+8. **Close the declared denominator.** Structural validity and slice approval are not project
+   completion. Report accounted and migrated scope separately, force another plan while work
+   remains, and require current global certification before final cutover or decommission.
 
 ## Observable Compatibility
 
@@ -51,6 +54,10 @@ Every discovered behavior receives one of these dispositions:
 | `remove` | Proven dead or unreachable behavior will not migrate. | Reachability evidence and approval |
 | `defer` | The behavior remains on the legacy path for a later slice. | Owner, dependency, and exit criterion |
 | `block` | No safe implementation or coexistence path is known. | Blocker, attempted mitigations, and escalation owner |
+
+`remove` and retained/deferred legacy behavior may be accounted under an approved scope policy,
+but they are not migrated. Strict 100% migrated scope permits no removal, retention, deferral,
+stored pending disposition, audit-derived unknown gap, or unverified item.
 
 Undefined, unspecified, implementation-defined, or environment-dependent source behavior
 must not be labeled equivalent without evidence. Capture the actually observed behavior
@@ -86,6 +93,9 @@ Typical gates combine:
 
 Do not use universal coverage percentages or require a test for every method. Configure
 thresholds by profile and project risk, and explain what behavior each gate protects.
+Passing slice gates advances that slice only. Final cutover and decommission additionally
+require migrate-audit to reconcile the complete declared source census, actual target inventory,
+traceability, slice approvals, cutover union, consumers, and asset dispositions.
 
 ## Human Approval Gates
 
@@ -98,6 +108,10 @@ Human approval is mandatory before:
 - waiving a required validator; or
 - decommissioning the final legacy path.
 
+Human approval cannot turn missing evidence, unknown scope, retained source, or an approved
+removal into migrated scope. Approval selects a documented policy disposition; the completion
+report must still show its category and exclude it from the migrated numerator.
+
 ## Rule Provenance
 
 Shared metadata: `source` is the framework v3 migration/evidence policy;
@@ -109,3 +123,4 @@ Shared metadata: `source` is the framework v3 migration/evidence policy;
 | `GEN-MIG-002` | Difficult source behavior needs an explicit policy rather than a false equivalence claim. | Behavior is uncertain, dead, changed, or deferred | Disposition and cross-reference validation | Decision, exception, or reachability evidence | Framework schema v2 |
 | `GEN-MIG-003` | Deterministic checks and human judgment answer different questions. | Verification and review | State-transition validation | Separate verification and review records | Framework schema v2 |
 | `GEN-MIG-004` | Uniform coverage quotas are poor proxies for behavioral confidence. | Quality-gate selection | Profile composition validation | Configured gates with rationale | Framework schema v2 |
+| `GEN-MIG-005` | Slice completion and structural validity do not close a whole-product denominator. | Approval, final cutover, and decommission | Global completion audit | Current implementation/decommission certificate and exact counts | Framework schema v3 |

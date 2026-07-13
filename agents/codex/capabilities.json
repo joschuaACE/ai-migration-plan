@@ -6,7 +6,7 @@
     ]
   },
   "adapter": "codex",
-  "adapter_version": "2.0.0",
+  "adapter_version": "2.1.0",
   "evidence": {
     "last_reviewed": "2026-07-12",
     "url": "https://github.com/openai/codex/tree/main/codex-rs/hooks"
@@ -31,7 +31,8 @@
     "project-instructions",
     "standards",
     "skills",
-    "hooks"
+    "hooks",
+    "runtime-validator"
   ],
   "schema_version": "2.0",
   "surfaces": [

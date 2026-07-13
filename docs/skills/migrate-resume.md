@@ -26,9 +26,15 @@ headings.
 
 ### Step 1: Validate Before Trusting State
 
-1. Read `config.json` and `state.json`, then validate every JSON artifact, schema version,
-   stable ID, cross-reference, evidence checksum, transition, and history chain in the full
-   `.migration/` directory.
+1. Read `config.json`, `scope.json`, `state.json`, and `target-inventory.json`, then run:
+
+   ```bash
+   python3 .migration-framework/bin/migrationctl.py validate .migration
+   ```
+
+   Validate every JSON artifact, schema version, stable ID, cross-reference, evidence checksum,
+   transition, and history chain in the current `.migration/` directory. This is structural
+   current-state validation, not full-scope completion certification.
 2. Confirm `state.status` equals the final `history` destination, `last_transition` equals
    the final history entry, and `revision` equals the number of completed transitions.
 3. Confirm the framework/profile versions, output profile, migration strategy,
@@ -41,8 +47,9 @@ headings.
 
 ### Step 2: Restore State-Specific Context
 
-6. Read only the context required by the current lifecycle state, plus config, state, active
-   decisions/exceptions, and traceability:
+6. Read only the context required by the current lifecycle state, plus config, scope policy and
+   source dispositions, state, target inventory, active decisions/exceptions, traceability, and
+   any completion certificate:
 
    | State | Required active context | Safe workflow |
    |---|---|---|
@@ -54,8 +61,8 @@ headings.
    | `execute` | active plan, execution report, target ownership, prerequisites | migrate-execute, or migrate-verify after a valid handoff |
    | `verify` | active plan, configured gates, execution outputs, prior evidence | migrate-verify, or migrate-review when plan is verified |
    | `review` | deterministic evidence and unresolved judgment findings | migrate-review |
-   | `approve` | review result, approvals, cutover preflight, remaining slice DAG | plan next slice or migrate-cutover |
-   | `cut_over` | change record, telemetry, rollback and post-cutover evidence | migrate-cutover monitoring/rollback or migrate-decommission |
+   | `approve` | review result, approvals, global audit, remaining slice DAG, certificate status | migrate-plan while work remains; otherwise migrate-audit before final cutover |
+   | `cut_over` | final whole-scope record, telemetry, rollback, union coverage, and certificate status | monitor/rollback; audit before final decommission |
    | `decommissioned` | final evidence, decisions, retained archive | terminal; report only |
    | `blocked` | `resume_to`, `blocked_by` exceptions, owners, exit criteria | resolve then resume exactly |
    | `failed` | `resume_to`, failure diagnostics, rollback status, recovery action | recover then resume exactly |
@@ -112,15 +119,24 @@ headings.
     - `verify` with all required passing/waived deterministic evidence -> run migrate-review,
       which owns the validated `verify -> review` transition;
     - `review` with resolved findings and explicit human approval -> let migrate-review
-      record plan approval and the `review -> approve` transition;
-    - `approve` with more slices required before coordinated cutover -> `plan`;
-    - `approve` with completed cutover preflight and human approval -> run migrate-cutover,
-      which owns `approve -> cut_over`; and
-    - `cut_over` with post-cutover acceptance, retention obligations, and decommission
-      approval complete -> run migrate-decommission, which owns the terminal transition.
+      record plan approval and the `review -> approve` transition, then run a global audit;
+    - `approve` -> run the installed audit command with `.migration` and the exact
+      `accounted` or `migrated` policy claim before routing;
+    - `approve` with any required work remaining -> mandatory `plan`; final cutover is forbidden;
+    - `approve` with zero remaining work -> run migrate-audit certification; only a current
+      passing implementation-stage certificate permits migrate-cutover to own
+      `approve -> cut_over`;
+    - partial cutover while state is `approve` -> record `phase: "cut_over"` observation
+      evidence without entering global `cut_over`, then plan the remaining work;
+    - `cut_over` with union cutover coverage complete -> run migrate-audit for a current
+      decommission-stage certificate; and
+    - `cut_over` with that certificate, post-cutover acceptance, asset dispositions, retention
+      obligations, and final approval complete -> run migrate-decommission, which owns the
+      whole-scope terminal transition.
 
-18. A safely rolled-back cutover returns `cut_over -> approve`; an uncertain or irreversible
-    failure enters `failed` with `resume_to: "cut_over"`. Execute the tested route/state
+18. A safely rolled-back final cutover returns `cut_over -> approve`; a partial rollback keeps
+    state at `approve`. An uncertain or irreversible final-cutover failure enters `failed` with
+    `resume_to: "cut_over"`. Execute the tested route/state
     recovery when trigger conditions require it, then record the outcome. Never describe
     approval as cutover or cutover as decommission.
 19. Preserve the verification/review boundary: deterministic command results and checksums
@@ -136,17 +152,21 @@ headings.
     Output profile / strategy: <profile> / <strategy>
     State / revision: <status> / <revision>
     Active slice: <SLICE ID or none>
-    Trace: <covered behaviors>/<required behaviors>, <implemented>, <verified>, <approved>
-    Validation: <schema/reference/checksum result>
+    Scope: <accounted>/<declared>, <migrated>, <retained>, <removed>, <pending>, <unknown>
+    Trace: <covered behaviors>/<required behaviors>, <implemented>, <verified>, <approved>, <cut over>
+    Plans/targets/tests: <approved>/<required>, <verified>/<required>, <verified>/<required>
+    Validation: <structural schema/reference/checksum result>
+    Completion certificate: <missing|stale|failing|current, claim, stage>
     Blockers/failure: <EXC IDs, owners, exit criteria, rollback status>
     Last valid transition: <from -> to, reason, timestamp>
     Workspace diagnostic: <source drift, target build, incomplete/external operation>
     Next safe action: <workflow and stable IDs>
     ```
 
-21. Do not report file counts or a percentage as behavioral completion. Completion claims
-    require traceability from source and behavior through target/test to passing evidence or
-    an approved exception.
+21. Do not report file-count similarity or an unqualified percentage as behavioral completion.
+    Report accounted and migrated numerators separately. Completion claims require the global
+    scope, source snapshot, target inventory, traceability, evidence, cutover union, and current
+    certificate appropriate to the lifecycle stage; an approved exception alone is not migrated.
 22. If `--continue` was supplied, show the exact transition/checkpoint performed and then
     continue with the selected workflow. Otherwise stop after the self-contained status and
     recommendation.
@@ -161,8 +181,9 @@ headings.
 
 ## Success Criteria
 
-- The complete state graph, transition history, evidence checksums, profiles, and workspace
-  ownership are validated before any continuation.
+- The current state graph, transition history, evidence checksums, profiles, and workspace
+  ownership are structurally validated before any continuation, without presenting that result
+  as full-scope completion.
 - Context is restored by stable IDs and authoritative artifacts, not filenames, prose, or
   elapsed time.
 - Interrupted and externally uncertain operations are detected and handled idempotently.
@@ -170,5 +191,7 @@ headings.
   are resolved, and only to the recorded safe state.
 - The recommendation covers the full initialize-to-decommission lifecycle and distinguishes
   approval, cutover, rollback, and decommission.
+- Approve-state routing uses global denominators: remaining work always returns to plan, while
+  final cutover/decommission require current stage-specific completion certification.
 - Deterministic verification evidence remains separate from judgment review.
 - Default use is read-only; `--continue` performs only validated, traceable, atomic changes.
