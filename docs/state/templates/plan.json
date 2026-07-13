@@ -1,0 +1,14 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/plan.schema.json",
+  "schema_version": "2.0",
+  "id": "SLICE-0001",
+  "status": "planned",
+  "source_units": ["SRC-0001"],
+  "behavioral_contracts": ["BEH-0001"],
+  "target_units": [],
+  "dependencies": [],
+  "release_boundary": "Describe how this slice can be released independently",
+  "rollback": "Describe how routing or deployment returns to the legacy implementation",
+  "verification_gates": ["behavioral-contracts", "build", "tests"],
+  "approval_refs": []
+}

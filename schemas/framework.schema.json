@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/framework.schema.json",
+  "title": "AI migration framework manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "framework_version", "profile_contract_version", "merge_precedence", "generic_documents", "workflow_documents", "hook_documents", "release_documents", "documentation", "required_variables", "variable_contract", "schemas", "state_machine", "compatibility"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "2.0"},
+    "framework_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "profile_contract_version": {"const": "2.0"},
+    "name": {"type": "string", "minLength": 1},
+    "default_pair": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "default_output_profile": {"enum": ["service", "library", "sdk", "cli"]},
+    "default_strategy": {"enum": ["incremental", "big-bang"]},
+    "strict_validation": {"type": "boolean"},
+    "merge_precedence": {
+      "const": ["generic", "source", "target", "pair", "output", "project"]
+    },
+    "generic_documents": {"$ref": "#/$defs/pathList"},
+    "workflow_documents": {"$ref": "#/$defs/pathList"},
+    "hook_documents": {"$ref": "#/$defs/pathList"},
+    "provenance_documents": {"$ref": "#/$defs/pathList"},
+    "release_documents": {"$ref": "#/$defs/pathList"},
+    "documentation": {"$ref": "#/$defs/pathList"},
+    "required_variables": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}},
+    "variable_contract": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "owner", "description"],
+        "properties": {
+          "type": {"enum": ["string", "number", "boolean"]},
+          "owner": {"enum": ["source", "target", "pair", "output", "project"]},
+          "description": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "schemas": {"$ref": "#/$defs/pathList"},
+    "state_machine": {
+      "type": "object",
+      "required": ["initial", "terminal", "states", "transitions"],
+      "properties": {
+        "initial": {"type": "string"},
+        "terminal": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "states": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "transitions": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}
+      },
+      "additionalProperties": false
+    },
+    "compatibility": {
+      "type": "object",
+      "required": ["v1_variables", "accepted_pair_aliases", "deprecated_variable_aliases"],
+      "properties": {
+        "v1_variables": {"type": "string"},
+        "accepted_pair_aliases": {"type": "object", "additionalProperties": {"type": "string"}},
+        "deprecated_variable_aliases": {"type": "object", "additionalProperties": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "pathList": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+      "uniqueItems": true
+    }
+  }
+}

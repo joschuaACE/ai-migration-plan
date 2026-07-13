@@ -1,0 +1,14 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/evidence.schema.json",
+  "schema_version": "2.0",
+  "id": "EVID-0001",
+  "phase": "verify",
+  "slice_id": "SLICE-0001",
+  "gate": "build",
+  "status": "pass",
+  "command": "replace with the exact reproducible command",
+  "environment": {},
+  "artifacts": [],
+  "contracts": ["BEH-0001"],
+  "recorded_at": "1970-01-01T00:00:00Z"
+}

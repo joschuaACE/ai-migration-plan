@@ -1,0 +1,14 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/plan.schema.json",
+  "schema_version": "2.0",
+  "id": "SLICE-0002",
+  "status": "approved",
+  "source_units": ["SRC-0002", "SRC-0003"],
+  "behavioral_contracts": ["BEH-0002"],
+  "target_units": ["TGT-0004", "TGT-0005", "TGT-0006"],
+  "dependencies": ["SLICE-0001"],
+  "release_boundary": "Order handling routes independently after catalog compatibility is established.",
+  "rollback": "Return order routing to legacy and retain Java shadow comparisons for diagnosis.",
+  "verification_gates": ["behavioral-contracts", "build", "tests", "changed-code-coverage", "static-analysis"],
+  "approval_refs": ["migration-owner-review-2026-01-01-slice-0002"]
+}

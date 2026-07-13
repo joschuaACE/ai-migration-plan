@@ -1,0 +1,106 @@
+{
+  "$schema": "../../schemas/adapter-capabilities.schema.json",
+  "activation": {
+    "requirements": []
+  },
+  "adapter": "claude",
+  "adapter_version": "2.0.0",
+  "evidence": {
+    "last_reviewed": "2026-07-12",
+    "url": "https://code.claude.com/docs/en/hooks"
+  },
+  "hook_types": {
+    "agent": {
+      "native_type": "agent",
+      "stability": "experimental",
+      "support": "native",
+      "timeout": true
+    },
+    "command": {
+      "native_type": "command",
+      "stability": "stable",
+      "support": "native",
+      "timeout": true
+    }
+  },
+  "output_format": "matcher-groups-v1",
+  "packaging": [
+    "project-instructions",
+    "workflow-sections",
+    "hooks"
+  ],
+  "schema_version": "2.0",
+  "surfaces": [
+    "cli"
+  ],
+  "triggers": {
+    "file-create": {
+      "event": "PostToolUse",
+      "matcher_strategy": "fixed",
+      "native_matcher": "Write|Edit",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "reason": "Claude exposes tool events rather than an exact file-create lifecycle event; Write/Edit is a broader approximation.",
+      "support": "approximate"
+    },
+    "file-delete": {
+      "event": "PostToolUse",
+      "matcher_strategy": "fixed",
+      "native_matcher": "Bash",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "reason": "Claude exposes tool events rather than an exact file-delete lifecycle event; Bash is a broader approximation.",
+      "support": "approximate"
+    },
+    "file-save": {
+      "event": "PostToolUse",
+      "matcher_strategy": "fixed",
+      "native_matcher": "Write|Edit",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "reason": "Claude exposes tool events rather than an exact file-save lifecycle event; Write/Edit is a broader approximation.",
+      "support": "approximate"
+    },
+    "post-tool": {
+      "event": "PostToolUse",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "pre-tool": {
+      "event": "PreToolUse",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "session-start": {
+      "event": "SessionStart",
+      "matcher_strategy": "none",
+      "native_types": [
+        "command"
+      ],
+      "support": "native"
+    },
+    "stop": {
+      "event": "Stop",
+      "matcher_strategy": "none",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    }
+  }
+}

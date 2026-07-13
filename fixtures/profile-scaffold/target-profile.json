@@ -1,0 +1,28 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/profile.schema.json",
+  "schema_version": "2.0",
+  "profile_version": "1.0.0",
+  "kind": "target",
+  "id": "sample-target",
+  "display_name": "Sample target",
+  "capabilities": ["compile", "test", "static-analysis", "architecture-validation", "coverage", "dependency-integrity", "module-boundaries"],
+  "documents": ["docs/standards/targets/_template/README.md"],
+  "variables": {
+    "target_language": "Sample Target",
+    "target_language_id": "sample-target",
+    "target_build_tool": "SampleBuild",
+    "target_build_file": "sample.build",
+    "target_package_concept": "module",
+    "target_test_framework": "SampleTest",
+    "target_source_dir": "src/main/sample",
+    "target_test_dir": "src/test/sample",
+    "compile_command": "sample-build compile",
+    "test_command": "sample-build test",
+    "test_single_command": "sample-build test {class}",
+    "architecture_test_command": "sample-build architecture-test",
+    "coverage_command": "sample-build coverage",
+    "coverage_report_path": "build/coverage.json",
+    "lint_command": "sample-build lint"
+  },
+  "provenance": {"last_reviewed_version": "1.0.0", "evidence": ["Structural conformance fixture"]}
+}

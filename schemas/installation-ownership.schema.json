@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/installation-ownership.schema.json",
+  "title": "Managed installation ownership",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "framework_version", "adapter", "profiles", "project_overrides", "bundle_digest", "files"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "3.0"},
+    "framework_version": {"type": "string"},
+    "adapter": {"enum": ["kiro", "claude", "codex"]},
+    "profiles": {
+      "type": "object",
+      "required": ["source", "target", "pair", "output"],
+      "properties": {
+        "source": {"type": "string"}, "target": {"type": "string"}, "pair": {"type": "string"}, "output": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "project_overrides": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+      "additionalProperties": {"type": ["string", "number", "boolean"]}
+    },
+    "inferred_overrides": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+    },
+    "bundle_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "files": {
+      "type": "object",
+      "propertyNames": {"pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+      "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+    }
+  }
+}

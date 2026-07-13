@@ -1,0 +1,23 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/profile.schema.json",
+  "schema_version": "2.0",
+  "profile_version": "1.0.0",
+  "kind": "output",
+  "id": "sample-library",
+  "display_name": "Sample library",
+  "capabilities": ["consumer-api", "api-internal-spi-boundaries"],
+  "requires": {"target": ["module-boundaries", "dependency-integrity"]},
+  "documents": ["docs/output-profiles/library.md"],
+  "target_documents": {"sample-target": ["docs/standards/targets/_template/README.md"]},
+  "variables": {
+    "output_profile": "sample-library",
+    "target_framework": "no application framework",
+    "architecture_style": "api-internal-spi"
+  },
+  "quality_gates": {
+    "required": ["behavioral-contracts", "build", "tests", "public-api"],
+    "human_approval": true,
+    "coverage_policy": {"metric": "public-api", "project_thresholds_required": true}
+  },
+  "provenance": {"last_reviewed_version": "1.0.0", "evidence": ["Structural conformance fixture"]}
+}

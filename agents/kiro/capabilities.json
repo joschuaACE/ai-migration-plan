@@ -1,0 +1,101 @@
+{
+  "$schema": "../../schemas/adapter-capabilities.schema.json",
+  "activation": {
+    "requirements": []
+  },
+  "adapter": "kiro",
+  "adapter_version": "2.0.0",
+  "evidence": {
+    "last_reviewed": "2026-07-12",
+    "url": "https://kiro.dev/docs/hooks/"
+  },
+  "hook_types": {
+    "agent": {
+      "native_type": "agent",
+      "stability": "stable",
+      "support": "native",
+      "timeout": false
+    },
+    "command": {
+      "native_type": "command",
+      "stability": "stable",
+      "support": "native",
+      "timeout": true
+    }
+  },
+  "output_format": "kiro-v1",
+  "packaging": [
+    "steering",
+    "skills",
+    "hooks"
+  ],
+  "schema_version": "2.0",
+  "surfaces": [
+    "ide"
+  ],
+  "triggers": {
+    "file-create": {
+      "event": "PostFileCreate",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "file-delete": {
+      "event": "PostFileDelete",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "file-save": {
+      "event": "PostFileSave",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "post-tool": {
+      "event": "PostToolUse",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "pre-tool": {
+      "event": "PreToolUse",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "session-start": {
+      "event": "SessionStart",
+      "matcher_strategy": "none",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    },
+    "stop": {
+      "event": "Stop",
+      "matcher_strategy": "none",
+      "native_types": [
+        "command",
+        "agent"
+      ],
+      "support": "native"
+    }
+  }
+}

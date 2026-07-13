@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/inventory.schema.json",
+  "title": "Source inventory",
+  "type": "object",
+  "required": ["schema_version", "migration_id", "units"],
+  "properties": {
+    "$schema": {"type": "string"}, "schema_version": {"const": "2.0"}, "migration_id": {"type": "string"},
+    "units": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "path", "kind", "reachability", "behaviors", "dependencies", "risks"], "properties": {"id": {"type": "string", "pattern": "^SRC-[0-9]{4,}$"}, "path": {"type": "string"}, "kind": {"type": "string"}, "reachability": {"enum": ["reachable", "dead", "unknown"]}, "behaviors": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^BEH-[0-9]{4,}$"}}, "dependencies": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^SRC-[0-9]{4,}$"}}, "risks": {"type": "array", "items": {"type": "string"}}}}}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../../schemas/profile.schema.json",
+  "schema_version": "2.0",
+  "profile_version": "2.0.0",
+  "kind": "output",
+  "id": "sdk",
+  "display_name": "SDK",
+  "capabilities": ["consumer-api", "api-internal-spi-boundaries", "compatibility-contract", "consumer-documentation"],
+  "requires": {"target": ["module-boundaries", "dependency-integrity"]},
+  "documents": ["docs/output-profiles/sdk.md"],
+  "target_documents": {
+    "java-25": ["docs/standards/targets/java-25/sdk-profile.md"]
+  },
+  "variables": {
+    "output_profile": "sdk",
+    "target_framework": "no application framework",
+    "architecture_style": "api-internal-spi"
+  },
+  "quality_gates": {
+    "required": ["behavioral-contracts", "build", "tests", "public-api", "binary-compatibility", "documentation", "examples", "dependency-integrity"],
+    "human_approval": true,
+    "coverage_policy": {"metric": "public-api", "project_thresholds_required": true}
+  },
+  "provenance": {"last_reviewed_version": "2.0.0", "evidence": ["Semantic versioning and Java consumer compatibility policy"]}
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../../schemas/profile.schema.json",
+  "schema_version": "2.0",
+  "profile_version": "2.0.0",
+  "kind": "pair",
+  "id": "cpp-to-java-25",
+  "display_name": "C++ to Java 25",
+  "source": "cpp",
+  "target": "java-25",
+  "requires": {
+    "source": ["source-detection", "behavior-characterization", "ownership-analysis"],
+    "target": ["compile", "test", "static-analysis", "dependency-integrity"]
+  },
+  "capabilities": [
+    "semantic-mapping",
+    "dependency-substitution",
+    "equivalence-policy",
+    "test-porting",
+    "native-interoperability"
+  ],
+  "documents": [
+    "docs/pairs/cpp-to-java-25/dependency-map.md",
+    "docs/pairs/cpp-to-java-25/test-porting-guide.md",
+    "docs/pairs/cpp-to-java-25/translation-examples.md",
+    "docs/pairs/cpp-to-java-25/translation-patterns.md"
+  ],
+  "variables": {
+    "pair_id": "cpp-to-java-25"
+  },
+  "equivalence_policy": {
+    "default": "observable-behavior",
+    "undefined_behavior": "record-and-stabilize-or-reject",
+    "implementation_defined_behavior": "inventory-environment-and-decide",
+    "intentional_change": "decision-and-contract-required"
+  },
+  "provenance": {
+    "last_reviewed_version": "2.0.0",
+    "evidence": ["Reference profile maintained with the framework release"]
+  }
+}

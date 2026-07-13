@@ -1,0 +1,26 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/migration-state.schema.json",
+  "schema_version": "2.0",
+  "migration_id": "replace-me",
+  "revision": 0,
+  "status": "initialize",
+  "resume_to": null,
+  "active_slice": null,
+  "completed_slices": [],
+  "blocked_by": [],
+  "last_transition": {
+    "from": null,
+    "to": "initialize",
+    "at": "1970-01-01T00:00:00Z",
+    "reason": "Migration initialized"
+  },
+  "history": [
+    {
+      "from": null,
+      "to": "initialize",
+      "at": "1970-01-01T00:00:00Z",
+      "reason": "Migration initialized"
+    }
+  ],
+  "validation_status": "unvalidated"
+}

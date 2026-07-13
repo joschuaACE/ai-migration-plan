@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../../schemas/profile.schema.json",
+  "schema_version": "2.0",
+  "profile_version": "2.0.0",
+  "kind": "output",
+  "id": "library",
+  "display_name": "Library",
+  "capabilities": ["consumer-api", "api-internal-spi-boundaries"],
+  "requires": {"target": ["module-boundaries", "dependency-integrity"]},
+  "documents": ["docs/output-profiles/library.md"],
+  "target_documents": {
+    "java-25": ["docs/standards/targets/java-25/library-profile.md"]
+  },
+  "variables": {
+    "output_profile": "library",
+    "target_framework": "no application framework",
+    "architecture_style": "api-internal-spi"
+  },
+  "quality_gates": {
+    "required": ["behavioral-contracts", "build", "tests", "public-api", "module-boundaries", "dependency-integrity"],
+    "human_approval": true,
+    "coverage_policy": {"metric": "public-api", "project_thresholds_required": true}
+  },
+  "provenance": {"last_reviewed_version": "2.0.0", "evidence": ["Java library API and module boundary policy"]}
+}

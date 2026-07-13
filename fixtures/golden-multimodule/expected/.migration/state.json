@@ -1,0 +1,28 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/migration-state.schema.json",
+  "schema_version": "2.0",
+  "migration_id": "golden-multimodule",
+  "revision": 12,
+  "status": "approve",
+  "resume_to": null,
+  "active_slice": null,
+  "completed_slices": ["SLICE-0001", "SLICE-0002"],
+  "blocked_by": [],
+  "last_transition": {"from": "review", "to": "approve", "at": "2026-01-01T00:15:00Z", "reason": "Human approval recorded"},
+  "history": [
+    {"from": null, "to": "initialize", "at": "2026-01-01T00:00:00Z", "reason": "Golden migration initialized"},
+    {"from": "initialize", "to": "discover", "at": "2026-01-01T00:01:00Z", "reason": "Inventory started"},
+    {"from": "discover", "to": "characterize", "at": "2026-01-01T00:02:00Z", "reason": "Source discovery complete"},
+    {"from": "characterize", "to": "blocked", "at": "2026-01-01T00:03:00Z", "reason": "Missing native SQLite variant evidence"},
+    {"from": "blocked", "to": "characterize", "at": "2026-01-01T00:04:00Z", "reason": "Build matrix evidence supplied"},
+    {"from": "characterize", "to": "map", "at": "2026-01-01T00:05:00Z", "reason": "Behavior contracts accepted"},
+    {"from": "map", "to": "plan", "at": "2026-01-01T00:06:00Z", "reason": "Seams mapped"},
+    {"from": "plan", "to": "execute", "at": "2026-01-01T00:07:00Z", "reason": "Slice execution started"},
+    {"from": "execute", "to": "failed", "at": "2026-01-01T00:08:00Z", "reason": "Differential ordering test failed"},
+    {"from": "failed", "to": "execute", "at": "2026-01-01T00:09:00Z", "reason": "Ordering implementation corrected"},
+    {"from": "execute", "to": "verify", "at": "2026-01-01T00:10:00Z", "reason": "Both slices implemented"},
+    {"from": "verify", "to": "review", "at": "2026-01-01T00:11:00Z", "reason": "All deterministic gates passed"},
+    {"from": "review", "to": "approve", "at": "2026-01-01T00:15:00Z", "reason": "Human approval recorded"}
+  ],
+  "validation_status": "valid"
+}

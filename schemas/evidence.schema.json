@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/evidence.schema.json",
+  "title": "Reproducible verification evidence",
+  "type": "object",
+  "required": ["schema_version", "id", "phase", "slice_id", "gate", "status", "command", "environment", "artifacts", "contracts", "recorded_at"],
+  "properties": {
+    "$schema": {"type": "string"}, "schema_version": {"const": "2.0"}, "id": {"type": "string", "pattern": "^EVID-[0-9]{4,}$"}, "phase": {"enum": ["characterize", "verify", "cut_over", "decommission"]}, "slice_id": {"type": ["string", "null"], "pattern": "^SLICE-[0-9]{4,}$"}, "gate": {"type": "string"}, "status": {"enum": ["pass", "fail", "waived"]}, "command": {"type": "string"}, "environment": {"type": "object", "additionalProperties": {"type": "string"}}, "artifacts": {"type": "array", "items": {"type": "string"}}, "contracts": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^BEH-[0-9]{4,}$"}}, "recorded_at": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": false
+}

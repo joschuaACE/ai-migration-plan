@@ -1,0 +1,13 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/exception.schema.json",
+  "schema_version": "2.0",
+  "id": "EXC-0001",
+  "category": "quality-gate",
+  "status": "proposed",
+  "scope": ["SLICE-0001"],
+  "rationale": "Explain why the policy cannot be met",
+  "impact": "Describe compatibility and operational impact",
+  "mitigation": "Describe compensating controls and follow-up",
+  "approvals": [],
+  "expires_at": null
+}

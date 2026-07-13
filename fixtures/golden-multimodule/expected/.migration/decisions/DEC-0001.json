@@ -1,0 +1,11 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/decision.schema.json",
+  "schema_version": "2.0",
+  "id": "DEC-0001",
+  "status": "accepted",
+  "context": "Legacy locale-dependent diagnostics cannot be a stable cross-runtime contract.",
+  "decision": "Emit stable diagnostic codes while preserving exit status and structured fields.",
+  "consequences": ["Human-readable wording intentionally differs", "Consumers can rely on diagnostic codes"],
+  "affected_contracts": ["BEH-0002"],
+  "approvals": ["migration-owner"]
+}

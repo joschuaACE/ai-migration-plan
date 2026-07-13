@@ -1,0 +1,104 @@
+{
+  "$schema": "../../schemas/adapter-capabilities.schema.json",
+  "activation": {
+    "requirements": [
+      "Codex CLI must load project hooks and the user must explicitly trust unmanaged hook definitions."
+    ]
+  },
+  "adapter": "codex",
+  "adapter_version": "2.0.0",
+  "evidence": {
+    "last_reviewed": "2026-07-12",
+    "url": "https://github.com/openai/codex/tree/main/codex-rs/hooks"
+  },
+  "hook_types": {
+    "agent": {
+      "native_type": null,
+      "reason": "Codex recognizes prompt and agent declarations but its current hook runtime skips them; only command handlers execute.",
+      "stability": "unsupported",
+      "support": "instruction",
+      "timeout": false
+    },
+    "command": {
+      "native_type": "command",
+      "stability": "stable",
+      "support": "native",
+      "timeout": true
+    }
+  },
+  "output_format": "matcher-groups-v1",
+  "packaging": [
+    "project-instructions",
+    "standards",
+    "skills",
+    "hooks"
+  ],
+  "schema_version": "2.0",
+  "surfaces": [
+    "cli"
+  ],
+  "triggers": {
+    "file-create": {
+      "event": "PostToolUse",
+      "matcher_strategy": "fixed",
+      "native_matcher": "Bash|apply_patch",
+      "native_types": [
+        "command"
+      ],
+      "reason": "Codex exposes tool events rather than an exact file-create lifecycle event; Bash/apply_patch is a broader approximation.",
+      "support": "approximate"
+    },
+    "file-delete": {
+      "event": "PostToolUse",
+      "matcher_strategy": "fixed",
+      "native_matcher": "Bash|apply_patch",
+      "native_types": [
+        "command"
+      ],
+      "reason": "Codex exposes tool events rather than an exact file-delete lifecycle event; Bash/apply_patch is a broader approximation.",
+      "support": "approximate"
+    },
+    "file-save": {
+      "event": "PostToolUse",
+      "matcher_strategy": "fixed",
+      "native_matcher": "Bash|apply_patch",
+      "native_types": [
+        "command"
+      ],
+      "reason": "Codex exposes tool events rather than an exact file-save lifecycle event; Bash/apply_patch is a broader approximation.",
+      "support": "approximate"
+    },
+    "post-tool": {
+      "event": "PostToolUse",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command"
+      ],
+      "support": "native"
+    },
+    "pre-tool": {
+      "event": "PreToolUse",
+      "matcher_strategy": "portable",
+      "native_types": [
+        "command"
+      ],
+      "support": "native"
+    },
+    "session-start": {
+      "event": "SessionStart",
+      "matcher_strategy": "none",
+      "native_types": [
+        "command"
+      ],
+      "support": "native"
+    },
+    "stop": {
+      "event": "Stop",
+      "matcher_strategy": "none",
+      "native_types": [
+        "command"
+      ],
+      "support": "native"
+    }
+  }
+}

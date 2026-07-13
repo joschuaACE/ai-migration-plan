@@ -1,0 +1,14 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/fixture.schema.json",
+  "schema_version": "2.0",
+  "id": "cpp-library-make",
+  "source_profile": "cpp",
+  "target_profile": "java-25",
+  "output_profile": "library",
+  "build_system": "make",
+  "test_framework": "catch2",
+  "source_units": ["public-header-api", "template-algorithms", "error-model", "library-tests"],
+  "hazards": ["templates", "macro-configuration", "exception-contract", "numeric-width", "abi-surface"],
+  "interfaces": ["consumer-api", "spi", "filesystem"],
+  "acceptance": ["api-internal-spi-boundaries", "no-service-framework", "consumer-contract-tests", "module-exports-verified"]
+}

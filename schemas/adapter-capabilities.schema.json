@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/adapter-capabilities.schema.json",
+  "title": "Agent adapter capabilities",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "adapter", "adapter_version", "output_format", "packaging", "surfaces", "activation", "evidence", "hook_types", "triggers"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "2.0"},
+    "adapter": {"enum": ["kiro", "claude", "codex"]},
+    "adapter_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "output_format": {"enum": ["kiro-v1", "matcher-groups-v1"]},
+    "packaging": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "surfaces": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["cli", "ide"]}},
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirements"],
+      "properties": {"requirements": {"type": "array", "items": {"type": "string", "minLength": 1}}}
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["last_reviewed", "url"],
+      "properties": {
+        "last_reviewed": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "url": {"type": "string", "pattern": "^https://"}
+      }
+    },
+    "hook_types": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "agent"],
+      "properties": {
+        "command": {"$ref": "#/$defs/hookType"},
+        "agent": {"$ref": "#/$defs/hookType"}
+      }
+    },
+    "triggers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file-save", "file-create", "file-delete", "pre-tool", "post-tool", "stop", "session-start"],
+      "properties": {
+        "file-save": {"$ref": "#/$defs/trigger"},
+        "file-create": {"$ref": "#/$defs/trigger"},
+        "file-delete": {"$ref": "#/$defs/trigger"},
+        "pre-tool": {"$ref": "#/$defs/trigger"},
+        "post-tool": {"$ref": "#/$defs/trigger"},
+        "stop": {"$ref": "#/$defs/trigger"},
+        "session-start": {"$ref": "#/$defs/trigger"}
+      }
+    }
+  },
+  "$defs": {
+    "hookType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support", "native_type", "stability", "timeout"],
+      "properties": {
+        "support": {"enum": ["native", "instruction"]},
+        "native_type": {"type": ["string", "null"], "enum": ["command", "prompt", "agent", null]},
+        "stability": {"enum": ["stable", "experimental", "unsupported"]},
+        "timeout": {"type": "boolean"},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support", "event", "matcher_strategy", "native_types"],
+      "properties": {
+        "support": {"enum": ["native", "approximate", "unsupported"]},
+        "event": {"type": ["string", "null"]},
+        "matcher_strategy": {"enum": ["portable", "fixed", "none"]},
+        "native_matcher": {"type": "string", "minLength": 1},
+        "native_types": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["command", "agent"]}},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

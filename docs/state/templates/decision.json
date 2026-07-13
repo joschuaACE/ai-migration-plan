@@ -1,0 +1,11 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/decision.schema.json",
+  "schema_version": "2.0",
+  "id": "DEC-0001",
+  "status": "proposed",
+  "context": "Describe the decision context",
+  "decision": "Describe the selected option",
+  "consequences": [],
+  "affected_contracts": [],
+  "approvals": []
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/fixture.schema.json",
+  "schema_version": "2.0",
+  "id": "cpp-cli-meson",
+  "source_profile": "cpp",
+  "target_profile": "java-25",
+  "output_profile": "cli",
+  "build_system": "meson",
+  "test_framework": "googletest",
+  "source_units": ["command-parser", "batch-runner", "stream-format", "cli-tests"],
+  "hazards": ["locale-dependent-parsing", "signal-handling", "filesystem-ordering", "exit-code-collapse", "platform-conditionals"],
+  "interfaces": ["argv", "stdin", "stdout", "stderr", "filesystem", "process-exit"],
+  "acceptance": ["golden-stream-tests", "exit-code-contract", "non-interactive-mode", "distribution-smoke-test"]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../../schemas/profile.schema.json",
+  "schema_version": "2.0",
+  "profile_version": "2.0.0",
+  "kind": "output",
+  "id": "cli",
+  "display_name": "Command-line application",
+  "capabilities": ["deployable-runtime", "command-contract", "stream-contract", "exit-code-contract"],
+  "requires": {"target": ["compile", "test", "dependency-integrity"]},
+  "documents": ["docs/output-profiles/cli.md"],
+  "target_documents": {
+    "java-25": ["docs/standards/targets/java-25/cli-profile.md"]
+  },
+  "variables": {
+    "output_profile": "cli",
+    "target_framework": "Picocli 4.x",
+    "architecture_style": "command-core-adapters"
+  },
+  "quality_gates": {
+    "required": ["behavioral-contracts", "build", "tests", "command-contract", "streams", "exit-codes", "packaging", "dependency-integrity"],
+    "human_approval": true,
+    "coverage_policy": {"metric": "changed-code", "project_thresholds_required": true}
+  },
+  "provenance": {"last_reviewed_version": "2.0.0", "evidence": ["POSIX-compatible command and stream behavior policy"]}
+}

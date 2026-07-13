@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/bundle-manifest.schema.json",
+  "title": "Compiled migration bundle manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "framework_version", "bundle_format_version", "profiles", "adapter", "adapter_capabilities", "variables", "project_overrides", "source_checksums", "generated_files", "bundle_digest"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "3.0"},
+    "framework_version": {"type": "string"},
+    "bundle_format_version": {"const": "3.0"},
+    "profiles": {
+      "type": "object",
+      "required": ["source", "target", "pair", "output"],
+      "properties": {
+        "source": {"type": "string"}, "target": {"type": "string"}, "pair": {"type": "string"}, "output": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "adapter": {"enum": ["kiro", "claude", "codex", "portable"]},
+    "adapter_capabilities": {"type": "object"},
+    "variables": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}},
+    "project_overrides": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+      "additionalProperties": {"type": ["string", "number", "boolean"]}
+    },
+    "inferred_overrides": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+    },
+    "source_checksums": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "generated_files": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "bundle_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

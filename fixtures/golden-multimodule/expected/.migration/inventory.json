@@ -1,0 +1,12 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/inventory.schema.json",
+  "schema_version": "2.0",
+  "migration_id": "golden-multimodule",
+  "units": [
+    {"id": "SRC-0001", "path": "catalog/catalog.cpp", "kind": "production", "reachability": "reachable", "behaviors": ["BEH-0001"], "dependencies": ["SRC-0003"], "risks": ["raii-transaction"]},
+    {"id": "SRC-0002", "path": "ordering/order.cpp", "kind": "production", "reachability": "reachable", "behaviors": ["BEH-0002"], "dependencies": ["SRC-0001", "SRC-0003"], "risks": ["thread-pool-ordering"]},
+    {"id": "SRC-0003", "path": "storage/sqlite_store.cpp", "kind": "native-adapter", "reachability": "reachable", "behaviors": ["BEH-0001", "BEH-0002"], "dependencies": [], "risks": ["native-sqlite"]},
+    {"id": "SRC-0004", "path": "legacy/http_server.cpp", "kind": "inbound-adapter", "reachability": "reachable", "behaviors": ["BEH-0001", "BEH-0002"], "dependencies": ["SRC-0001", "SRC-0002"], "risks": ["macro-feature-flag"]},
+    {"id": "SRC-0005", "path": "unused/old_report.cpp", "kind": "production", "reachability": "dead", "behaviors": [], "dependencies": [], "risks": ["dead-code"]}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-migration-framework/schemas/migration-config.schema.json",
+  "title": "Migration project configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "framework_version", "profiles", "output_profile", "migration_strategy", "source_root", "target_root", "quality_gates", "validation_status"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "2.0"},
+    "framework_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "profiles": {"type": "object", "required": ["source", "target", "pair"], "properties": {"source": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "target": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "pair": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}}, "additionalProperties": false},
+    "output_profile": {"enum": ["service", "library", "sdk", "cli"]},
+    "migration_strategy": {"enum": ["incremental", "big-bang"]},
+    "source_root": {"type": "string", "minLength": 1},
+    "target_root": {"type": "string", "minLength": 1},
+    "quality_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_checks", "coverage"],
+      "properties": {
+        "required_checks": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["metric", "threshold_percent", "rationale"],
+          "properties": {
+            "metric": {"enum": ["behavioral-contract", "changed-code", "public-api", "none"]},
+            "threshold_percent": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+            "rationale": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "project_decisions": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}},
+    "validation_status": {"enum": ["unvalidated", "valid", "invalid"]}
+  }
+}

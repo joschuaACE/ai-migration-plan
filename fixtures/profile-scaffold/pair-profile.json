@@ -1,0 +1,19 @@
+{
+  "$schema": "https://example.invalid/ai-migration-framework/schemas/profile.schema.json",
+  "schema_version": "2.0",
+  "profile_version": "1.0.0",
+  "kind": "pair",
+  "id": "sample-source-to-sample-target",
+  "display_name": "Sample source to sample target",
+  "source": "sample-source",
+  "target": "sample-target",
+  "requires": {
+    "source": ["source-detection", "behavior-characterization", "ownership-analysis"],
+    "target": ["compile", "test", "static-analysis", "dependency-integrity"]
+  },
+  "capabilities": ["semantic-mapping", "equivalence-policy"],
+  "documents": ["docs/pairs/_template/README.md"],
+  "variables": {"pair_id": "sample-source-to-sample-target"},
+  "equivalence_policy": {"default": "observable-behavior"},
+  "provenance": {"last_reviewed_version": "1.0.0", "evidence": ["Structural conformance fixture"]}
+}
