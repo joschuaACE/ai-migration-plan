@@ -4,6 +4,8 @@ This framework is a compiler and installer for an AI migration handbook.
 It does not translate application code itself. It equips an AI coding agent with the right
 rules, workflows, checks, and record-keeping system to perform a migration safely.
 
+For a quick reference while reading, see the [framework legend](LEGEND.md).
+
 ## The Overall Flow
 
 ```text

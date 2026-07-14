@@ -10,6 +10,10 @@ quality hooks, and safe state/install semantics so a migration can be executed a
 
 Current framework version: `3.1.0`.
 
+New to the vocabulary? Start with the [framework legend](LEGEND.md) for concepts such as
+slices, seams, artifact IDs, lifecycle states, placeholders, and completion claims. For a
+narrative walkthrough, see [How the Framework Works](HUMAN.md).
+
 ## Production-pilot scope
 
 - strict profile composition and template compilation;
