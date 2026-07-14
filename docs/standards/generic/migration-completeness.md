@@ -167,3 +167,120 @@ lifecycle policy; `owner` is the generic framework profile.
 | `GEN-COMP-002` | Missing work is invisible unless discovery has a reconciled denominator. | Discovery and source refresh | Source-census reconciliation | Scope contract, census snapshot, and inventory dispositions | Framework schema v3 |
 | `GEN-COMP-003` | Approved retention or removal is accounted but not migrated. | Progress and completion reporting | Completion-policy evaluation | Separate accounted/migrated numerators and disposition IDs | Framework schema v3 |
 | `GEN-COMP-004` | Slice approval cannot substantiate whole-product completion. | Approval, cutover, and decommission | Global completion audit | Passing current certification over all declared scope | Framework schema v3 |
+
+## Behavioral Depth Enforcement
+
+Structural certification (BEH-NNNN coverage, trace links, passing gates) proves that the
+migration graph is connected and evidence exists. It does NOT prove that the target
+implementation is semantically faithful to the source. A skeleton that compiles, defines the
+right interfaces, and passes trivial tests satisfies structural certification while
+implementing near-zero actual business logic.
+
+### Depth Policy
+
+The `quality_gates.depth_policy` in `config.json` controls behavioral depth enforcement:
+
+```json
+{
+  "quality_gates": {
+    "depth_policy": {
+      "enforcement": "blocking",
+      "min_observation_coverage_percent": 50,
+      "min_target_source_ratio": 0.1,
+      "min_assertions_per_behavior": 3
+    }
+  }
+}
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `enforcement` | `advisory` | `off` = no checks, `advisory` = warnings only, `blocking` = prevents certification |
+| `min_observation_coverage_percent` | 50 | Percent of declared BEH observations that must have individual `verified_by` links |
+| `min_target_source_ratio` | 0.1 | Minimum (target non-blank lines) / (source non-blank lines). A 155K-line source with 2K target lines (ratio 0.013) would fail. |
+| `min_assertions_per_behavior` | 3 | Minimum test assertions per behavioral contract (from `depth_metrics` in evidence records) |
+
+### Depth Metrics in Evidence
+
+When depth policy is `advisory` or `blocking`, evidence records SHOULD include the optional
+`depth_metrics` field:
+
+```json
+{
+  "id": "EVID-0005",
+  "gate": "tests",
+  "status": "pass",
+  "depth_metrics": {
+    "observations_exercised": 7,
+    "total_observations": 10,
+    "assertions": 42,
+    "source_lines": 2973,
+    "target_lines": 450
+  }
+}
+```
+
+Without `depth_metrics`, the audit still computes source/target ratios from the file system
+and observation coverage from structured `verified_by` links in behavioral contracts.
+
+### Structured Observations
+
+Behavioral contracts MAY use structured observations (schema version 2.1) that link each
+observation to specific verification evidence:
+
+```json
+{
+  "schema_version": "2.1",
+  "id": "BEH-0002",
+  "observations": [
+    {
+      "id": "OBS-001",
+      "description": "FS codes 1-8 determine which account value components are retrieved",
+      "verified_by": ["TEST-0005", "EVID-0004"],
+      "complexity": "complex"
+    },
+    {
+      "id": "OBS-002",
+      "description": "Invalidate(konto) cascades to affected rows",
+      "verified_by": ["TEST-0006"],
+      "complexity": "moderate"
+    }
+  ]
+}
+```
+
+Plain string observations remain valid (schema version 2.0) but score 0% on observation
+coverage — they cannot be individually verified.
+
+### Continuation Plan
+
+When depth analysis identifies incomplete work, the `continue` command produces a prioritized
+file-by-file translation plan:
+
+```bash
+python3 .migration-framework/bin/migrationctl.py continue .migration --project-root .
+```
+
+This outputs:
+- Which source units have skeleton-only targets (target/source ratio below 0.15)
+- Prioritized order (largest implementation gaps first)
+- Estimated sessions remaining
+- Which behavioral contracts need deeper test coverage
+
+### What Depth Enforcement Prevents
+
+Without depth enforcement, an agent can satisfy certification by:
+1. Declaring all source units as "migrated"
+2. Writing target files that define correct interfaces but implement no logic
+3. Running `{{compile_command}}` and test commands on trivial tests that pass against skeletons
+4. Recording evidence with `exit_code: 0`
+
+With `enforcement: blocking`, the audit would report:
+- `depth: target/source ratio 0.013 is below threshold 0.1 (2K target / 155K source)`
+- `depth: 0 behavior(s) have fewer than 3 test assertions`
+- `certifiable: false`
+
+This does not substitute for expert semantic judgment — a 10:1 compression ratio may be
+legitimate (e.g., replacing verbose legacy idioms with modern equivalents). But a 100:1
+ratio is never legitimate for a faithful port, and the framework now surfaces this signal
+rather than silently certifying it.

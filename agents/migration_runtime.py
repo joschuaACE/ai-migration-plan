@@ -1166,6 +1166,280 @@ def _certificate_fresh(
     return not errors, errors
 
 
+# ---------------------------------------------------------------------------
+# Behavioral depth analysis
+# ---------------------------------------------------------------------------
+
+def _count_file_lines(path: Path) -> int:
+    """Count non-blank lines in a file, returning 0 on error."""
+    try:
+        count = 0
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                if line.strip():
+                    count += 1
+        return count
+    except OSError:
+        return 0
+
+
+def _depth_analysis(
+    ctx: MigrationContext,
+    behaviors: dict[str, dict[str, Any]],
+    evidence: dict[str, dict[str, Any]],
+    target: dict[str, dict[str, Any]],
+    source: dict[str, dict[str, Any]],
+    scope_units: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Compute behavioral depth metrics for the migration.
+
+    Returns a dict with:
+      - observation_coverage: ratio of individually verified observations
+      - source_target_ratio: target lines / source lines
+      - assertions_per_behavior: {BEH-ID: assertion_count}
+      - depth_findings: list of human-readable issues
+      - depth_score: 0-100 composite score
+      - continuation_needed: bool
+      - skeleton_targets: list of target IDs that appear to be skeletons
+    """
+    depth_policy = ctx.config.get("quality_gates", {}).get("depth_policy", {})
+    enforcement = depth_policy.get("enforcement", "advisory")
+    min_obs_pct = depth_policy.get("min_observation_coverage_percent", 50)
+    min_ratio = depth_policy.get("min_target_source_ratio", 0.1)
+    min_assertions = depth_policy.get("min_assertions_per_behavior", 3)
+
+    depth_findings: list[str] = []
+
+    # --- Observation coverage ---
+    total_observations = 0
+    verified_observations = 0
+    for beh_id, beh in behaviors.items():
+        obs_list = beh.get("observations", [])
+        for obs in obs_list:
+            total_observations += 1
+            if isinstance(obs, dict) and obs.get("verified_by"):
+                verified_observations += 1
+    observation_coverage = (
+        (verified_observations / total_observations * 100) if total_observations > 0 else 0
+    )
+    if total_observations > 0 and observation_coverage < min_obs_pct:
+        depth_findings.append(
+            f"observation coverage {observation_coverage:.1f}% is below threshold {min_obs_pct}%"
+            f" ({verified_observations}/{total_observations} observations individually verified)"
+        )
+
+    # --- Source/target line ratio ---
+    source_lines = 0
+    source_root_result = _source_root(ctx)
+    source_root_path = source_root_result[0] if isinstance(source_root_result, tuple) else source_root_result
+    if source_root_path and isinstance(source_root_path, Path) and source_root_path.is_dir():
+        snapshot_files = ctx.scope.get("source_snapshot", {}).get("files", [])
+        for entry in snapshot_files:
+            file_path = entry.get("path", "") if isinstance(entry, dict) else ""
+            if file_path:
+                full = ctx.project_root / file_path
+                if full.is_file():
+                    source_lines += _count_file_lines(full)
+
+    target_lines = 0
+    skeleton_targets: list[str] = []
+    for tgt_id, tgt in target.items():
+        if not tgt_id.startswith("TGT-"):
+            continue
+        tgt_path = tgt.get("path", "")
+        if tgt_path:
+            full = ctx.project_root / tgt_path
+            lines = _count_file_lines(full)
+            target_lines += lines
+            # Flag files that are suspiciously thin relative to their mapped source
+            if lines < 50:
+                skeleton_targets.append(tgt_id)
+
+    target_source_ratio = (target_lines / source_lines) if source_lines > 0 else 0
+    if source_lines > 0 and target_source_ratio < min_ratio:
+        depth_findings.append(
+            f"target/source ratio {target_source_ratio:.3f} is below threshold {min_ratio}"
+            f" ({target_lines} target lines / {source_lines} source lines)"
+        )
+
+    # --- Assertions per behavior (from depth_metrics in evidence) ---
+    assertions_per_behavior: dict[str, int] = {}
+    for evid_id, record in evidence.items():
+        if record.get("status") != "pass" or record.get("schema_version") != "3.0":
+            continue
+        metrics = record.get("depth_metrics")
+        if not isinstance(metrics, dict):
+            continue
+        assertion_count = metrics.get("assertions", 0)
+        for beh_id in record.get("contracts", []):
+            assertions_per_behavior[beh_id] = assertions_per_behavior.get(beh_id, 0) + assertion_count
+
+    behaviors_below_threshold: list[str] = []
+    for beh_id in sorted(behaviors):
+        count = assertions_per_behavior.get(beh_id, 0)
+        if count < min_assertions:
+            behaviors_below_threshold.append(beh_id)
+    if behaviors_below_threshold:
+        depth_findings.append(
+            f"{len(behaviors_below_threshold)} behavior(s) have fewer than {min_assertions}"
+            f" test assertions: {','.join(behaviors_below_threshold[:10])}"
+        )
+
+    # --- Depth score (composite) ---
+    ratio_score = min(100, target_source_ratio / max(min_ratio, 0.01) * 100)
+    obs_score = observation_coverage
+    assertion_score = (
+        (len(behaviors) - len(behaviors_below_threshold)) / max(len(behaviors), 1) * 100
+    )
+    depth_score = (ratio_score * 0.4 + obs_score * 0.3 + assertion_score * 0.3)
+
+    continuation_needed = bool(depth_findings) and enforcement != "off"
+
+    return {
+        "enforcement": enforcement,
+        "observation_coverage_percent": round(observation_coverage, 1),
+        "verified_observations": verified_observations,
+        "total_observations": total_observations,
+        "source_lines": source_lines,
+        "target_lines": target_lines,
+        "target_source_ratio": round(target_source_ratio, 4),
+        "assertions_per_behavior": assertions_per_behavior,
+        "behaviors_below_assertion_threshold": behaviors_below_threshold,
+        "skeleton_targets": skeleton_targets,
+        "depth_findings": depth_findings,
+        "depth_score": round(depth_score, 1),
+        "continuation_needed": continuation_needed,
+        "thresholds": {
+            "min_observation_coverage_percent": min_obs_pct,
+            "min_target_source_ratio": min_ratio,
+            "min_assertions_per_behavior": min_assertions,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Continuation plan
+# ---------------------------------------------------------------------------
+
+def _build_continuation_plan(
+    ctx: MigrationContext,
+    depth_result: dict[str, Any],
+    behaviors: dict[str, dict[str, Any]],
+    source: dict[str, dict[str, Any]],
+    scope_units: dict[str, dict[str, Any]],
+    target: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Build a prioritized work plan for continuing an incomplete migration.
+
+    Identifies which source files are skeleton-translated and orders them
+    by dependency depth (leaf dependencies first).
+    """
+    source_root = _source_root(ctx)
+    work_items: list[dict[str, Any]] = []
+
+    # Map source units to their actual file sizes
+    source_sizes: dict[str, int] = {}
+    for src_id, unit in source.items():
+        path_str = unit.get("path", "")
+        if path_str:
+            full = ctx.project_root / path_str
+            if full.is_file():
+                source_sizes[src_id] = _count_file_lines(full)
+
+    # Map source units to their target units and sizes
+    for src_id, scope_item in scope_units.items():
+        if scope_item.get("disposition") not in MIGRATED_DISPOSITIONS:
+            continue
+        src_lines = source_sizes.get(src_id, 0)
+        if src_lines == 0:
+            continue
+
+        target_ids = scope_item.get("target_units", [])
+        tgt_total_lines = 0
+        for tgt_id in target_ids:
+            tgt_entry = target.get(tgt_id, {})
+            tgt_path = tgt_entry.get("path", "")
+            if tgt_path and tgt_id.startswith("TGT-"):
+                full = ctx.project_root / tgt_path
+                tgt_total_lines += _count_file_lines(full)
+
+        ratio = tgt_total_lines / src_lines if src_lines > 0 else 0
+        # A ratio below 0.15 strongly indicates skeleton implementation
+        if ratio < 0.15 and src_lines > 50:
+            src_unit = source.get(src_id, {})
+            work_items.append({
+                "source_unit": src_id,
+                "source_path": src_unit.get("path", ""),
+                "source_lines": src_lines,
+                "target_lines": tgt_total_lines,
+                "ratio": round(ratio, 4),
+                "target_units": target_ids,
+                "behaviors": src_unit.get("behaviors", []),
+                "priority": "high" if src_lines > 1000 else "medium" if src_lines > 200 else "low",
+            })
+
+    # Sort: largest gap first (highest source lines with lowest ratio)
+    work_items.sort(key=lambda x: -x["source_lines"])
+
+    # Group by behavior for dependency ordering
+    behavior_groups: dict[str, list[str]] = {}
+    for item in work_items:
+        for beh_id in item.get("behaviors", []):
+            behavior_groups.setdefault(beh_id, []).append(item["source_unit"])
+
+    total_source_gap = sum(item["source_lines"] for item in work_items)
+    total_target_existing = sum(item["target_lines"] for item in work_items)
+
+    return {
+        "command": "continue",
+        "continuation_needed": bool(work_items),
+        "summary": {
+            "skeleton_units": len(work_items),
+            "total_source_lines_needing_translation": total_source_gap,
+            "existing_target_lines": total_target_existing,
+            "estimated_target_lines_needed": int(total_source_gap * 0.35),
+            "estimated_sessions": max(1, total_source_gap // 3000),
+        },
+        "depth_analysis": depth_result,
+        "work_items": work_items[:50],
+        "behavior_groups": behavior_groups,
+        "recommended_order": [
+            item["source_path"] for item in work_items[:20]
+        ],
+    }
+
+
+def continue_migration(
+    migration_path: Path,
+    *,
+    project_root: Path | None = None,
+    layout: RuntimeLayout | None = None,
+) -> dict[str, Any]:
+    """Analyze migration depth and produce a continuation work plan."""
+    ctx = load_context(migration_path, project_root=project_root, layout=layout)
+    groups = _artifact_groups(ctx)
+    scratch: list[str] = []
+    behaviors = _index_by_id(groups["behaviors"], "behaviors", scratch)
+    evidence = _index_by_id(groups["evidence"], "evidence", scratch)
+    source = {
+        unit.get("id"): unit
+        for unit in ctx.inventory.get("units", [])
+        if isinstance(unit, dict) and isinstance(unit.get("id"), str)
+    }
+    scope_units = {
+        item.get("source_unit"): item
+        for item in ctx.scope.get("units", [])
+        if isinstance(item, dict) and isinstance(item.get("source_unit"), str)
+    }
+    target = {
+        item.get("id"): item
+        for item in ctx.target_inventory.get("units", [])
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    }
+    depth_result = _depth_analysis(ctx, behaviors, evidence, target, source, scope_units)
+    return _build_continuation_plan(ctx, depth_result, behaviors, source, scope_units, target)
+
+
 def _audit(
     ctx: MigrationContext,
     claim: str,
@@ -1482,6 +1756,19 @@ def _audit(
         findings.append(str(exc))
         graph_digest = None
         certifiable = False
+
+    # --- Behavioral depth analysis ---
+    depth_result = _depth_analysis(ctx, behaviors, evidence, target, source, scope_units)
+    depth_policy_enforcement = depth_result.get("enforcement", "advisory")
+    if depth_result.get("depth_findings"):
+        if depth_policy_enforcement == "blocking":
+            for df in depth_result["depth_findings"]:
+                findings.append(f"depth: {df}")
+            certifiable = False
+        elif depth_policy_enforcement == "advisory":
+            for df in depth_result["depth_findings"]:
+                warnings.append(f"depth: {df}")
+
     return {
         "command": "audit",
         "migration": str(ctx.migration_dir),
@@ -1501,6 +1788,7 @@ def _audit(
         "evidence": used_evidence,
         "findings": sorted(set(findings)),
         "warnings": sorted(set(warnings)),
+        "depth_analysis": depth_result,
         "digests": {
             "source": ctx.scope.get("source_snapshot", {}).get("digest"),
             "target": target_inventory_digest(ctx.target_inventory) if ctx.target_inventory else None,
@@ -1760,6 +2048,9 @@ def build_parser() -> argparse.ArgumentParser:
     transition.add_argument("--migration", type=Path, required=True)
     transition.add_argument("--to", required=True)
     transition.add_argument("--reason", required=True)
+    cont = subparsers.add_parser("continue", help="analyze depth and produce a continuation work plan")
+    cont.add_argument("path", type=Path)
+    cont.add_argument("--project-root", type=Path)
     return parser
 
 
@@ -1796,6 +2087,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             result = transition_migration(args.migration, args.to, args.reason, layout=layout)
             print(pretty_json(result), end="")
             return 0
+        if args.command == "continue":
+            plan = continue_migration(
+                args.path, project_root=args.project_root, layout=layout
+            )
+            print(pretty_json(plan), end="")
+            return 0 if not plan.get("continuation_needed") else 1
     except MigrationRuntimeError as exc:
         print(pretty_json({"ok": False, "error": str(exc)}), end="")
         return 1

@@ -29,6 +29,29 @@
             "threshold_percent": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
             "rationale": {"type": "string", "minLength": 1}
           }
+        },
+        "depth_policy": {
+          "description": "Behavioral depth enforcement policy. Controls whether skeleton-only implementations can pass certification.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enforcement": {
+              "enum": ["off", "advisory", "blocking"],
+              "description": "off=no depth checks, advisory=report findings but allow certification, blocking=depth failures prevent certification. Defaults to advisory when depth_policy is present."
+            },
+            "min_observation_coverage_percent": {
+              "type": "number", "minimum": 0, "maximum": 100,
+              "description": "Minimum percentage of BEH observations that must have individual verification. Defaults to 50."
+            },
+            "min_target_source_ratio": {
+              "type": "number", "minimum": 0, "maximum": 10,
+              "description": "Minimum ratio of target lines to source lines. A 155K-line source producing 2K target lines (ratio 0.013) would fail a 0.1 threshold. Defaults to 0.1."
+            },
+            "min_assertions_per_behavior": {
+              "type": "integer", "minimum": 0,
+              "description": "Minimum test assertions per behavioral contract. Defaults to 3."
+            }
+          }
         }
       }
     },

@@ -198,6 +198,30 @@ scope, impact, mitigation, and approvers are traceable.
 - Optional `.migration/reports/SLICE-NNNN-verification.md` summary.
 - Validated `.migration/state.json` transition or explicit failure/blocker.
 
+### Depth Metrics
+
+When the project configures `quality_gates.depth_policy`, evidence records SHOULD include the
+`depth_metrics` field recording assertion count, observation coverage, and source/target line
+measurements. These metrics feed the completion audit's behavioral depth gate.
+
+Record `depth_metrics` in the `gate: tests` evidence:
+
+```json
+{
+  "depth_metrics": {
+    "observations_exercised": 7,
+    "total_observations": 10,
+    "assertions": 42,
+    "source_lines": 2973,
+    "target_lines": 450
+  }
+}
+```
+
+A skeleton target that compiles and passes trivial tests still produces `status: pass` but its
+low depth metrics will be surfaced by `migrationctl.py audit --claim migrated` and will block
+certification when `enforcement: blocking` is configured.
+
 ## Success Criteria
 
 - Every required profile/project gate has reproducible passing evidence.

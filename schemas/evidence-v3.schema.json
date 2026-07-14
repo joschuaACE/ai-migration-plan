@@ -31,7 +31,39 @@
       }
     },
     "contracts": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^BEH-[0-9]{4,}$"}},
-    "recorded_at": {"type": "string", "format": "date-time"}
+    "recorded_at": {"type": "string", "format": "date-time"},
+    "depth_metrics": {
+      "description": "Quantitative depth metrics proving the evidence exercises real behavioral substance, not just structural compilation. Required when depth_policy is enforced.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "observations_exercised": {
+          "description": "Number of distinct BEH observations individually exercised by this evidence",
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_observations": {
+          "description": "Total observations declared in the referenced contracts",
+          "type": "integer",
+          "minimum": 1
+        },
+        "assertions": {
+          "description": "Number of test assertions (assertEquals, assertTrue, etc.) in the test suite run by this evidence",
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_lines": {
+          "description": "Total non-blank source lines in the legacy files covered by this evidence's contracts",
+          "type": "integer",
+          "minimum": 0
+        },
+        "target_lines": {
+          "description": "Total non-blank lines in the target production files produced for this evidence's contracts",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
   },
   "$defs": {
     "relativePath": {"type": "string", "pattern": "^(?:\\.|(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+)$"}

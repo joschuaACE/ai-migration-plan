@@ -167,7 +167,18 @@ headings.
     Report accounted and migrated numerators separately. Completion claims require the global
     scope, source snapshot, target inventory, traceability, evidence, cutover union, and current
     certificate appropriate to the lifecycle stage; an approved exception alone is not migrated.
-22. If `--continue` was supplied, show the exact transition/checkpoint performed and then
+22. When the project configures `quality_gates.depth_policy`, run the depth analysis:
+
+    ```bash
+    python3 .migration-framework/bin/migrationctl.py continue .migration --project-root .
+    ```
+
+    Report the depth score, target/source ratio, and continuation status. If
+    `continuation_needed` is true, include the top work items from the continuation plan in the
+    status report and recommend targeted file-by-file translation before attempting
+    re-certification. A migration whose lifecycle reached `cut_over` but whose depth score is
+    below passing thresholds is a skeleton migration requiring substantial implementation work.
+23. If `--continue` was supplied, show the exact transition/checkpoint performed and then
     continue with the selected workflow. Otherwise stop after the self-contained status and
     recommendation.
 
