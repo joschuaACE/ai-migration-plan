@@ -1,187 +1,209 @@
 # migrate-init
 
-Initialize a versioned {{source_language}} to {{target_language}} migration record without
-performing discovery, translation, or target implementation work.
+Initialize a C++ to Java migration project — scan source, detect tech, determine output type (service/library/sdk/cli), build inventory, gather decisions, generate roadmap, and create the target project skeleton.
 
 ## When to Use
 
-- Once for a new migration before any other migration workflow.
-- When adopting the framework for an existing project that does not yet have a valid
-  `.migration/` directory.
-- Do not use it to replace or repair an existing state directory; validate it and use
-  migrate-resume or the framework upgrade procedure instead.
+Once, at the very start of a migration. This is the first command in the workflow. It must be run before any other migration skill.
 
 ## Inputs
 
-- **Source root** (required) — `{source_root}`, containing the legacy project.
-- **Target root** (optional) — `{target_root}`, default `./app/`; it may not exist yet.
-- **Migration ID** (required or generated) — a stable, project-specific identifier using
-  letters, digits, `.`, `_`, or `-`.
-- **Output profile** (optional confirmation) — must match the compiled bundle profile
-  `{{output_profile}}`; selecting another profile requires compiling/installing that bundle
-  so its documents, capabilities, architecture, and gates are present.
-- **Migration strategy** (optional) — `incremental` by default; `big-bang` requires an
-  accepted decision explaining why incremental seams are impractical.
-- **Quality-gate policy** (required) — output-profile required checks plus a risk-approved
-  coverage metric (`behavioral-contract`, `changed-code`, `public-api`, or `none`), threshold
-  where applicable, and rationale. Automation must not invent the threshold.
-- **Completion policy** (required) — the declared product boundary and whether the requested
-  claim is `accounted` or strict `migrated`. Strict migrated scope does not permit retained,
-  removed, pending, unknown, or unverified items at certification time.
-- **--auto flag** (optional) — accept only profile defaults that require no project judgment.
-  It must not invent architecture, compatibility, cutover, or risk decisions.
+- **Path to C++ source root** (required) — the directory containing .cpp/.h/.hpp files
+- **--auto flag** (optional) — skip interactive questions, infer output type from build system, use defaults
+- **--poc flag** (optional) — PoC mode. Scopes migration to calculation engine replacement only. Enables golden master validation. Skips full architecture questions.
 
 ## Procedure
 
-### Step 1: Preflight Without Mutation
+### Phase 1: Source Scanning (Parallel Agents)
 
-1. Read the compiled bundle manifest and confirm the selected source, target, pair, and
-   output profiles are compatible.
-2. Resolve `{source_root}` and `{target_root}` without following a path outside the project.
-   Verify `{source_root}` exists and contains evidence of {{source_language}} source or build
-   metadata. The target may be absent.
-3. If `.migration/` exists, stop before writing. Validate the existing directory and report
-   whether the correct action is resume, managed upgrade, or explicit replacement. Never
-   silently overwrite state, evidence, decisions, or locally edited reports.
-4. Confirm the compiled `{{output_profile}}` profile matches build products and user intent.
-   Build detection may suggest a profile, but mixed products or ambiguous consumers require
-   a user decision and, if the choice changes, a correctly recompiled bundle.
-5. Confirm incremental modernization as the default. For a requested big-bang migration,
-   allocate the next `DEC-NNNN` ID and record the rationale, blast radius, rollback model,
-   and required approval before accepting that strategy.
-6. Start with the selected output profile's required checks. Record project additions and a
-   risk-approved coverage metric, threshold, and rationale. `none` is allowed only with a
-   specific rationale and does not waive behavioral-contract evidence; a metric other than
-   `none` requires an explicit numeric threshold before configuration can be valid.
-7. Define the initial completion policy in `scope.json`: mode, required `accounted` or strict
-   `migrated` claim, approved-removal policy, boundary decision IDs, and source root for the
-   blank source snapshot. `whole-source-root` normally uses an empty boundary-decision list.
-   `bounded` requires one or more accepted `DEC-NNNN` records with durable human approvals;
-   automation must not infer or self-approve a narrower source boundary.
-   Record initial product, supported-variant/platform, consumer, public/operational-surface, and
-   proposed-exclusion assumptions as accepted initialization decisions; discovery will confirm
-   them in inventory and research. This is not permission to omit inconvenient products. Mixed
-   products assigned to separate migrations require an umbrella decision that accounts for
-   every product.
+1. Verify source path exists and contains C++ files
+2. If `.migration/` already exists, ask user to confirm overwrite
+3. Create `.migration/` directory structure
+4. Spawn 4 parallel scanner agents:
+   - **Agent 1 (headers):** Scan all .h/.hpp files → classify by purpose (interface, implementation, config, types)
+   - **Agent 2 (sources):** Scan all .cpp/.cc files → classify by purpose (entry point, library, test, utility)
+   - **Agent 3 (build):** Analyze CMakeLists.txt/Makefile/vcxproj → extract targets, dependencies, compiler flags
+   - **Agent 4 (tests):** Scan test directories → catalog test coverage, frameworks used
+5. Each agent writes its section directly to `.migration/inventory.md`
+6. Verify inventory.md has all files accounted for
 
-### Step 2: Allocate Stable Identity
+Inventory entry format per file:
+```markdown
+| File | Type | LOC | Complexity | Dependencies | Phase |
+|------|------|-----|-----------|--------------|-------|
+| src/core/DataProcessor.cpp | source/core | 342 | 3 | DataStore.h, Logger.h | 3 |
+```
 
-8. Select one `migration_id` and retain it for the lifetime of the migration. Do not derive
-   artifact identity from a mutable path, package, phase number, or timestamp.
-9. Use monotonically allocated identifiers within each artifact class:
-   `SRC-NNNN`, `BEH-NNNN`, `TGT-NNNN`, `TEST-NNNN`, `DEC-NNNN`, `SLICE-NNNN`,
-   `EVID-NNNN`, and `EXC-NNNN`. An ID is never reused after rejection, removal, rename, or
-   supersession.
-10. Timestamps are UTC RFC 3339 values. They record events but never act as identity.
+### Phase 2: Technology Detection
 
-### Step 3: Stage the Authoritative State
+7. Run the migrate-detect workflow (inline or as sub-task):
+   - Scan #include directives for known libraries
+   - Analyze build files for package manager dependencies
+   - Detect C++ standard version from compiler flags
+   - Identify platform-specific code (#ifdef blocks)
+   - Write `.migration/research/legacy-stack.md`
+   - Write `.migration/research/dependency-map.md` (each C++ dep → Java equivalent)
+   - Write `.migration/research/risk-matrix.md` (risks ranked by migration difficulty)
 
-11. Create a staging directory next to `.migration/` with these directories:
+### Phase 3: Architecture Decisions (Interactive unless --auto)
 
-   ```text
-   .migration/
-   ├── analysis/
-   ├── behaviors/
-   ├── decisions/
-   ├── evidence/
-   ├── exceptions/
-   ├── plans/
-   ├── reports/
-   ├── reviews/
-   └── research/
-   ```
+8. Ask user the following (one question at a time):
+   - **If --poc flag is set:**
+     - Skip database, API style, authentication, messaging, deployment questions
+     - Set output_type = "library" (calculation engine is a library)
+     - Ask only: purpose, group/artifact ID, and which C++ files constitute the calculation engine
+     - Ask: where is the test data (ZOT variants) for golden master validation?
+     - Ask: how to build and run the C++ engine to produce reference output?
+     - Record decision D-01: "PoC mode — scope limited to calculation engine replacement"
+   - What is the application's primary purpose?
+   - **What does the C++ build produce?** (executable with network listeners → `service`, command-line tool → `cli`, .dll/.so/.a/static lib → `library`, library with public headers + versioned API → `sdk`). Record as `output_type`.
+   - Group ID and Artifact ID for Gradle? (e.g., com.company.app)
+   - **If output_type = service:**
+     - Database technology target? (PostgreSQL/MySQL/MongoDB/none)
+     - Does the app expose REST APIs? gRPC? Both?
+     - Authentication mechanism? (Spring Security + OAuth2 / JWT / Basic / none)
+     - Message broker needed? (Kafka/RabbitMQ/none)
+     - Deployment target? (Container/K8s/bare metal/serverless)
+   - **If output_type = library or sdk:**
+     - Will consumers use Spring? (determines whether to include optional auto-configuration)
+     - Should the library publish to Maven Central, GitHub Packages, or internal repo?
+     - Any SPIs consumers must implement? (driven ports with no default adapter)
+   - **If output_type = sdk (additionally):**
+     - Versioning strategy? (semver strict / semver relaxed)
+     - API stability level for initial release? (beta / stable)
+   - **If output_type = cli:**
+     - Argument parsing framework preference? (picocli / Spring Shell / plain args)
+     - Target native image (GraalVM) or JVM JAR?
+   - Any C++ components that should NOT be migrated? (FFI boundary?)
+9. Record all decisions in `.migration/decisions.md` with D-NN numbering
+10. Write `.migration/research/target-stack.md`
 
-12. Instantiate the bundle-owned JSON templates and preserve their `$schema` and
-    `schema_version` fields. In an installed target, read them from
-    `.migration-framework/state/templates/` and validate against
-    `.migration-framework/schemas/`. In a portable bundle, the corresponding directories
-    are `state/templates/` and `schemas/`. These are blank starting templates; the active
-    records created from them belong under `.migration/`. Create:
+### Phase 4: Structure Mapping
 
-    - `config.json` with `framework_version`, the source/target/pair profile IDs,
-      `output_profile`, strategy, `{source_root}`, `{target_root}`, `quality_gates`, project
-      decision references, and validation status;
-    - `scope.json` with the migration ID, completion policy, declared source root, and blank
-      source snapshot/unit dispositions ready for deterministic discovery;
-    - `state.json` with `status: "initialize"`, revision `0`, no active slice, no completed
-      slices, and its initial transition from `null`;
-    - `inventory.json` with the migration ID and an empty `units` array; and
-    - `target-inventory.json` with the migration ID and an empty `units` array; and
-    - `traceability.json` with the migration ID and an empty `links` array.
+11. Run the migrate-map workflow:
+    - Map C++ namespaces → Java packages
+    - Map C++ directories → hexagonal layers
+    - Map C++ classes → Java class targets (service/entity/port/adapter)
+    - Write `.migration/mapping.md`
 
-13. Store project choices requiring judgment as individual schema-valid
-    `.migration/decisions/DEC-NNNN.json` records. Profile selection is configuration;
-    intentional behavior changes, exclusions, architecture variations, and strategy
-    exceptions are decisions and must not be hidden in prose.
-14. Do not create target source files, a build skeleton, mappings, plans, or behavioral
-    equivalence claims during initialization. In particular, do not run
-    `{{compile_command}}` until an output-profile-specific target structure exists. This
-    preserves the required discovery and characterization gates before translation.
+### Phase 5: Roadmap Generation
 
-### Step 4: Validate and Promote Atomically
+12. Analyze dependency graph between C++ modules (who includes whom)
+13. Order modules by dependency depth (leaf modules first)
+14. Group into phases (one phase = one logical module or tightly-coupled cluster)
+15. Write `.migration/roadmap.md` with:
+    - Phase number, name, goal
+    - Files included
+    - Dependencies on other phases
+    - Estimated complexity (1-5)
+    - Status: Not Started
+16. Write `.migration/tech-debt.md` (patterns that need redesign, not 1:1 port)
 
-15. Validate each staged JSON artifact against its declared schema, then validate the current
-    staged cross-reference graph. After promotion, the installed structural validator is:
+### Phase 6: Initialize State & Config
 
-    ```bash
-    python3 .migration-framework/bin/migrationctl.py validate .migration
+17. Write `.migration/config.json` with user decisions (output_type, java_version, spring_boot_version, architecture style, etc.)
+18. Write `.migration/state.md` with YAML frontmatter:
+    ```yaml
+    ---
+    migration_version: "1.0"
+    source: "<detected C++ standard> / <detected build system>"
+    target: "Spring Boot 4.0 / Java 25 / Hexagonal"
+    output_type: "<service|library|sdk|cli>"
+    architecture: hexagonal
+    status: initialized
+    active_phase: 0
+    total_phases: <count from ROADMAP>
+    progress:
+      phases_complete: 0
+      files_migrated: 0
+      files_remaining: <total from INVENTORY>
+    last_updated: "<now>"
+    ---
     ```
+19. Initialize project skeleton in target_root (default: `./app/`) based on `output_type`:
 
-    Structural validity means only that the currently populated state conforms and references
-    resolve. Empty initialized inventories can be structurally valid and are not migration
-    completion evidence.
-16. If validation fails, report every actionable diagnostic and delete only the staging
-    directory. Leave any prior `.migration/` state untouched.
-17. Atomically promote the staged directory to `.migration/` only after all validation
-    succeeds. Set `config.json.validation_status` and `state.json.validation_status` to
-    `valid` in the promoted, revalidated artifact set.
+    **If --poc mode:**
+    - Create `.migration/validation/` directory
+    - Create `.migration/validation/test-variants.md` with selected ZOT variants
+    - Create `.migration/validation/poc-config.json` with cpp_engine_path, cpp_engine_command, java_engine_command, test_data_path, comparison_format, tolerance
+    - Add to state.md: `mode: poc`
 
-### Step 5: Enter Discovery
+    **If output_type = `service` (default):**
+    - Create `{target_root}` directory
+    - Generate build.gradle.kts with Spring Boot 4.x plugin + detected dependencies
+    - Generate settings.gradle.kts with project name
+    - Create Gradle wrapper (gradlew) — Gradle 9.3+
+    - Create hexagonal package structure (domain/, application/, adapter/in/web/, adapter/out/, config/)
+    - Create Application.java main class (`@SpringBootApplication`)
+    - Create application.yml with basic config
+    - Create ArchUnit test for hexagonal rules
 
-18. Apply the validated `initialize -> discover` transition. Increment the state revision,
-    append the transition to `history`, and make it equal to `last_transition`. Do not edit
-    only the status field.
-19. Report the selected profiles, roots, strategy, quality-gate policy, completion policy,
-    migration ID, decision IDs, and structural validation result. State explicitly:
-    “framework installed; migration initialized; 0 source units migrated.” The next action is
-    migrate-detect.
-20. Explain the remaining lifecycle explicitly:
+    **If output_type = `library` or `sdk`:**
+    - Create `{target_root}` directory
+    - Generate build.gradle.kts with `java-library` + `maven-publish` plugins (NO Spring Boot plugin)
+    - Generate settings.gradle.kts
+    - Create Gradle wrapper (gradlew) — Gradle 9.3+
+    - Create hexagonal package structure WITHOUT adapter/in/web/, adapter/in/messaging/, adapter/in/scheduler/
+    - Create adapter/out/defaults/ for optional default SPI implementations
+    - Create spi/ package for extension points
+    - Do NOT create Application.java or application.yml
+    - Create module-info.java with exports for public API packages
+    - Create ArchUnit test (adapted: no adapter/in checks)
+    - For `sdk` additionally: create samples/ directory, docs/ directory, annotation/ package with @Stable/@Beta/@Internal
+    - Configure `withJavadocJar()` and `withSourcesJar()` in build.gradle.kts
 
-    ```text
-    discover -> characterize -> map -> plan -> execute -> verify -> review
-             -> approve -> cut_over -> decommissioned
-    ```
+    **If output_type = `cli`:**
+    - Create `{target_root}` directory
+    - Generate build.gradle.kts with `application` plugin + picocli dependency
+    - Generate settings.gradle.kts
+    - Create Gradle wrapper (gradlew) — Gradle 9.3+
+    - Create hexagonal package structure with adapter/in/cli/ (no web/, no messaging/)
+    - Create main class with picocli `@Command` entry point
+    - Do NOT create application.yml (unless using Spring Shell)
+    - Create ArchUnit test for hexagonal rules (adapted for CLI adapter)
+    - Configure GraalVM native-image support if user opted in
 
-    Verification will produce reproducible evidence; review will separately evaluate
-    semantic fidelity, idiomatic design, and justified modernization.
+20. Commit: `migrate(init): initialize migration project from <source_path>`
+
+### Phase 7: Report & Next Steps
+
+21. Display summary:
+    - Total files: X (.cpp) + Y (.h/.hpp)
+    - Total lines: N
+    - Detected technologies: [list]
+    - Phases generated: Z
+    - Estimated complexity: [distribution]
+22. Suggest next step: "Run migrate-analyze 1 to begin analyzing the first phase"
+    - If --poc mode: also suggest "Run migrate-golden-master to validate functional equivalence"
 
 ## Outputs
 
-- `.migration/config.json` — schema-valid profile, strategy, root, and validation config.
-- `.migration/scope.json` — schema-valid completion policy and blank discovery snapshot.
-- `.migration/state.json` — revisioned state transitioned from `initialize` to `discover`.
-- `.migration/inventory.json` — empty schema-valid source inventory ready for discovery.
-- `.migration/target-inventory.json` — empty schema-valid actual-target inventory.
-- `.migration/traceability.json` — empty schema-valid cross-reference graph.
-- `.migration/decisions/DEC-NNNN.json` — any explicit initialization decisions.
-- Empty artifact directories for later lifecycle stages; no target implementation files.
+- `.migration/state.md` — migration state tracker
+- `.migration/roadmap.md` — ordered phases
+- `.migration/inventory.md` — classified file inventory
+- `.migration/decisions.md` — architecture decision log
+- `.migration/mapping.md` — C++ → Java structure map
+- `.migration/tech-debt.md` — patterns requiring redesign
+- `.migration/config.json` — migration configuration
+- `.migration/research/legacy-stack.md` — detected technologies
+- `.migration/research/target-stack.md` — target architecture
+- `.migration/research/risk-matrix.md` — migration risks
+- `.migration/research/dependency-map.md` — library migration paths
+- `{target_root}` — target project skeleton (build.gradle.kts, Gradle wrapper, hexagonal package structure, ArchUnit test)
+- If --poc: `.migration/validation/poc-config.json` and `.migration/validation/test-variants.md`
 
 ## Success Criteria
 
-- Every created JSON file validates against its declared schema version; v2 lifecycle artifacts
-  and v3 scope/target-inventory artifacts are not conflated.
-- The currently populated `.migration/` artifact graph validates before and after atomic
-  promotion; this is reported as structural initialization, never full-scope completion.
-- The migration, profiles, output profile, strategy, and roots are explicit and stable.
-- The declared completion policy and initial product boundary are explicit; strict `migrated`
-  mode has not been weakened by inferred exclusions.
-- `quality_gates` contains the selected profile's required checks and an explicit risk-based
-  coverage policy; no missing threshold was guessed.
-- Existing migration state or unrelated project files were not overwritten.
-- Big-bang strategy, if selected, has an accepted and approved decision record.
-- `state.json` has a continuous history ending in `discover` with validation status `valid`.
-- No discovery result, behavioral claim, target mapping, plan, or translated code was
-  fabricated during initialization.
-- The user knows migrate-detect is next and understands that verify and review are distinct
-  gates before approval and cutover.
-- Initialization reports zero migrated source units and makes no percentage or completion claim.
+- .migration/ directory created with all required files
+- inventory.md has EVERY .cpp/.h/.hpp file classified
+- legacy-stack.md has all detected technologies with migration paths
+- decisions.md has numbered architecture decisions (including output_type decision)
+- mapping.md maps C++ structure to hexagonal Java packages
+- roadmap.md has dependency-ordered phases covering all source files
+- state.md initialized with correct counts and output_type
+- config.json has valid configuration with output_type set
+- Project skeleton matches output_type (service→Spring Boot app, library→java-library JAR, sdk→library+docs, cli→application plugin)
+- Skeleton project compiles (`cd app && ./gradlew compileJava` succeeds)
+- ArchUnit hexagonal test exists and passes (trivially, empty project)
+- User knows the next step
+- If --poc: validation directory created with poc-config.json and test-variants.md

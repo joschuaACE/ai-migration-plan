@@ -1,6 +1,0 @@
-{
-  "$schema": "https://example.invalid/ai-migration-framework/schemas/target-inventory.schema.json",
-  "schema_version": "3.0",
-  "migration_id": "replace-me",
-  "units": []
-}

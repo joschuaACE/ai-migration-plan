@@ -1,211 +1,130 @@
 # migrate-review
 
-Perform LLM-assisted judgment review of one verified migration slice: semantic fidelity,
-minimalism, target idiom quality, and justified modernization. Every check here requires
-reasoning that cannot be reduced to a command or numeric threshold.
+Review migrated code with two passes — semantic fidelity checking plus ponytail minimalism audit — then ship or request fixes.
 
 ## When to Use
 
-After `migrate-verify SLICE-NNNN` has produced passing evidence for every required automated
-gate. The lifecycle position is Verify → **Review** → Approve. Review does not repeat the
-build, test, coverage, architecture, static-analysis, or dependency-integrity commands and
-does not itself cut over production traffic.
+After migrate-verify N passes. This is the final step in the phase cycle: Analyze → Plan → Execute → Verify → **Review**. After this passes, the phase is complete.
 
 ## Inputs
 
-- **Slice ID** (required) — the `SLICE-NNNN` plan to review.
+- **Phase number** (required) — which phase to review
 - **--scope flag** (optional):
-  - `diff` — review target changes and traceability affected by this slice;
-  - `full` — review all target units and contracts in the slice.
-- **--fix flag** (optional) — apply low-risk advisory simplifications, then require verification again.
+  - `diff` — review only the git diff for this phase (faster)
+  - `full` — review all generated files regardless of diff
+- **--fix flag** (optional) — auto-fix advisory issues (OVER_ENGINEERED, UNNECESSARY) without asking
 
 **Required state:**
-
-- `.migration/state.json` has `status: verify` and names the slice.
-- The plan has `status: verified`.
-- All required `EVID-NNNN` verification records pass and traceability links them.
-- `config.json` selects the output profile whose idioms and boundaries apply.
-- `scope.json` and `target-inventory.json` are current enough to report global denominators;
-  their structural validity does not imply whole-scope completion.
-
-Trust deterministic verification only for what it proved: commands ran in the recorded
-environment, required gates passed, and references exist. This review judges whether the
-implementation preserves meaning and whether any modernization is appropriate.
+- Phase status: "verified"
+- nn-verification.md exists with passing status
+- config.json output_type determines which checks apply
 
 ## Procedure
 
-### Step 1: Enter review and gather context
+### Step 1: Gather Review Context
 
-1. Validate `.migration/`, then transition `state.json` from `verify` to `review` with the
-   installed runtime:
+1. Get git diff for this phase: `git diff migrate-phase-N-start..HEAD`
+2. Read all Java files generated in this phase
+3. Read corresponding C++ source files
+4. Read decisions.md for justified divergences
 
-   ```bash
-   python3 .migration-framework/bin/migrationctl.py validate .migration
-   python3 .migration-framework/bin/migrationctl.py transition --migration .migration --to review --reason "Begin judgment review for SLICE-NNNN"
-   ```
-2. Read the slice plan, source units, `BEH-NNNN` contracts, known gaps, target units and tests.
-3. Read scope policy and source dispositions, target inventory, traceability, deterministic
-   evidence, accepted decisions, approved exceptions, and the selected source/target/pair/
-   output standards.
-4. Read the slice diff and any coexistence, rollback, and consumer/deployment constraints.
+### Step 2: Pass 1 — Semantic Fidelity Review
 
-### Step 2: Semantic fidelity review
+Spawn a reviewer agent focused on semantic fidelity:
 
-Judge behavior by contract and observable path rather than by file shape:
+**Checks:**
+- Are there behavior changes NOT recorded in decisions.md?
+- Are there silently dropped methods or functionality?
+- Are error paths handled equivalently?
+- Is thread-safety preserved where C++ was thread-safe?
+- Are return values semantically equivalent (not just typed similarly)?
+- Are side effects preserved (writes, events, state changes)?
 
-- Do target results, error categories, ordering, numeric behavior, side effects, and resource
-  lifecycles preserve each characterized observation?
-- Are concurrency visibility, atomicity, cancellation, shutdown, and thread-safety properties
-  preserved where the source relied on them?
-- Are implicit charset, locale, time, filesystem, serialization, platform, ABI, and dependency
-  assumptions preserved or deliberately normalized?
-- Is every difference linked to an accepted `DEC-NNNN` and, when policy requires it, an
-  approved `EXC-NNNN` with consumer impact and mitigation?
-- Does coexistence keep the legacy and target paths from duplicating or corrupting side effects?
+**Verdict per file:** `FAITHFUL` | `DRIFT_MINOR` | `DRIFT_MAJOR`
+- `DRIFT_MINOR`: Acceptable if justified (log it)
+- `DRIFT_MAJOR`: Unacceptable — must fix or record decision
 
-Undefined, unspecified, or environment-dependent source behavior cannot receive a blanket
-equivalence claim. Review its observed scope and approved disposition explicitly.
+### Step 3: Pass 2 — Ponytail Minimalism Audit
 
-**Verdict per behavior:** `FAITHFUL` | `DRIFT_MINOR` | `DRIFT_MAJOR`
+Spawn a reviewer agent focused on minimalism:
 
-- `FAITHFUL` — the available contracts, evidence, and reasoning support the compatibility claim.
-- `DRIFT_MINOR` — a bounded difference is accepted and traceable.
-- `DRIFT_MAJOR` — an unapproved or unsafe behavior change must be fixed or explicitly decided.
+**Checks against the migration ladder:**
 
-### Step 3: Minimalism audit
+1. **Is there code that doesn't need to exist?**
+   - Dead code carried over from C++ that was dead there too
+   - Defensive code beyond what the C++ had (unless at trust boundary)
 
-Assess whether the target is direct and maintainable without carrying accidental source or
-AI-generated complexity:
+2. **Does the framework already provide this?** (Skip for library/sdk output_type — Spring is not a dependency)
+   - Hand-rolled connection pooling (use HikariCP default)
+   - Manual retry logic (use Resilience4j)
+   - Custom serialization (use Jackson auto-config)
 
-1. Is dead/unreachable source code omitted only through an approved exception?
-2. Is defensive code limited to real trust, compatibility, or recovery boundaries?
-3. Are wrappers, builders, strategies, configuration layers, and extension points justified
-   by a behavior, selected output architecture, or actual second implementation?
-4. Could the same behavior be clearer with a smaller target-idiomatic construct?
-5. Does the design avoid speculative portability, premature distribution, and premature optimization?
+3. **Are there unnecessary abstractions?**
+   - Wrapper classes that add nothing
+   - Interfaces with only one implementation (unless it's a port)
+   - Builder patterns where a constructor/record works
 
-An interface with one implementation is not automatically unnecessary when it is a required
-service port or a consumer-facing SPI; judge it against the selected output profile.
+4. **Could it be simpler?**
+   - Multi-step code that a single annotation handles
+   - Manual bean wiring that auto-configuration covers
+   - Verbose null checks that Optional handles
 
-{{#if output_profile == 'service'}}
-{{#if target_language_id == 'java-25'}}
-For a Java service, question hand-built pooling, serialization, retry, or wiring only when the
-selected framework safely provides the required behavior. Auto-configuration is not a reason
-to erase an explicit domain/application boundary or a behavior-specific resilience decision.
-{{/if}}
-{{/if}}
+5. **Is the output type respected?**
+   - Library producing adapter/in/web/ code → VIOLATION
+   - Library with Spring Boot starters in dependencies → OVER_ENGINEERED (use compileOnly)
+   - CLI with REST controllers → WRONG_TYPE
+   - Service missing application.yml → INCOMPLETE
 
 **Verdict per finding:** `OVER_ENGINEERED` | `UNNECESSARY` | `SIMPLIFIABLE` | `APPROVED`
 
-### Step 4: Target idiom and output-profile review
+### Step 4: Consolidated Verdict
 
-Judge whether the code reads naturally in {{target_language}} without forcing fashionable
-features or line-by-line transliteration:
-
-- Are names, types, absence/error models, resource scopes, collections, concurrency, and module
-  boundaries idiomatic for the target?
-- Does the service/library/SDK/CLI structure match its selected profile without cross-contamination?
-- Are public API/SPI and compatibility commitments deliberately small and documented?
-- Are unsupported, preview, incubating, or experimental target features backed by an accepted
-  decision, complete build/runtime flags, compatibility scope, and exit plan?
-
-{{#if target_language_id == 'java-25'}}
-Consider records, sealed hierarchies, pattern matching, streams, and modern concurrency only
-where they clarify the mapped contract. Do not force streams over clearer loops, expose preview
-features through stable APIs accidentally, or mistake garbage collection for deterministic
-resource cleanup.
-{{/if}}
-
-**Verdict:** `IDIOMATIC` | `TRANSLITERATED` | `ACCEPTABLE`
-
-### Step 5: Consolidate the judgment
-
-Write `.migration/reviews/SLICE-NNNN-review.md` with:
+Combine both passes into a review document:
 
 ```markdown
-## Migration Review: SLICE-NNNN
+## Migration Review: Phase N
 
-### Behavioral Fidelity
-| Behavior ID | Verdict | Evidence/Decision/Exception | Reasoning |
-|---|---|---|---|
+### Semantic Fidelity
+| File | Status | Notes |
+|------|--------|-------|
 
-### Minimalism
-| Target unit | Finding | Severity | Action |
-|---|---|---|---|
+### Minimalism Audit
+| File | Finding | Severity | Action |
+|------|---------|----------|--------|
 
-### Idiom and Output Profile
-| Target unit | Verdict | Notes |
-|---|---|---|
-
-### Overall Verdict: RECOMMEND_APPROVAL | NEEDS_FIXES | BLOCKED
+### Verdict: APPROVED | NEEDS_FIXES | BLOCKED
 ```
 
-Do not convert uncertain reasoning into a fabricated deterministic score.
+### Step 5: Resolution
 
-### Step 6: Resolve and request approval
-
-**If RECOMMEND_APPROVAL:**
-
-1. Present the review, remaining known gaps, rollback scope, and cutover implications to the
-   named human approver.
-2. After explicit approval is recorded, set the plan to `approved` and transition
-   every fully covered trace link to `approved`, append the slice ID to
-   `state.json.completed_slices`, clear `active_slice`, and transition state from `review`
-   to `approve`. Add the durable human approval reference to the plan's `approval_refs`.
-   Stage and validate these mutations as one atomic update.
-3. Recompute the whole-scope denominators after approval:
-
-   ```bash
-   python3 .migration-framework/bin/migrationctl.py audit .migration --claim <accounted|migrated>
-   ```
-
-   Report source units, behaviors, plans, target/test units, approved behaviors/plans, trace
-   statuses, retained, removed, pending, unknown, unverified, and exception counts with stable
-   IDs. Slice approval does not merge, deploy, route traffic, or decommission the legacy path.
-4. If any required implementation work remains, cutover is not an available next action.
-   Transition `approve -> plan` and name the remaining IDs:
-
-   ```bash
-   python3 .migration-framework/bin/migrationctl.py transition --migration .migration --to plan --reason "Required declared-scope work remains after SLICE-NNNN approval"
-   ```
-
-   This branch is mandatory for any pending, unknown, unowned, unmapped, planned, implemented,
-   merely verified, or policy-incompatible retained/removed item.
-5. Only when the global audit has no remaining work may the project run migrate-audit with
-   implementation certification. Final cutover remains forbidden until a passing current
-   `.migration/completion-certificate.json` exists for the exact claim and
-   `stage: "implementation"`.
+**If APPROVED (no blocking issues):**
+1. Tag commit: `git tag migrate-phase-N-complete`
+2. Update state.md: `status: completed` for this phase
+3. Update progress metrics
+4. Report: phase done, suggest migrate-analyze N+1 for next phase
 
 **If NEEDS_FIXES:**
+1. If `--fix` flag: auto-apply non-risky fixes (OVER_ENGINEERED, UNNECESSARY)
+2. Otherwise: present fix list to user, ask which to apply
+3. After fixes: re-run verification gates
+4. Re-review fixed code (abbreviated)
 
-1. Apply `--fix` only to low-risk minimalism/idiom findings within the authorized slice.
-2. Transition `review → execute`, update target units and traceability, rerun every affected
-   deterministic verification gate, then repeat review on the changed scope.
-
-**If BLOCKED:**
-
-1. List every `DRIFT_MAJOR`, unsupported dependency/platform, unresolved source behavior, or
-   missing approval.
-2. Fix it, or propose a decision/exception with explicit impact and approvers; never treat an
-   unapproved note as justification.
-3. Transition to `blocked` when external input is required, recording `resume_to: review`; after
-   resolution, resume review or return to execution as appropriate.
+**If BLOCKED (semantic drift detected):**
+1. List all DRIFT_MAJOR items
+2. For each: suggest fix OR ask user to record as intentional in decisions.md
+3. Do NOT advance until all drift is resolved or justified
 
 ## Outputs
 
-- `.migration/reviews/SLICE-NNNN-review.md` — evidence-linked judgment and recommendation.
-- New or updated `DEC-NNNN` / `EXC-NNNN` proposals for every intentional difference.
-- Updated plan, traceability, and `state.json` only after explicit human approval or a valid corrective transition.
-- No automatic cutover, merge, deployment, or decommission operation.
+- Review verdict in console output
+- Git tag: `migrate-phase-N-complete` (if approved)
+- state.md updated with completion status and progress metrics
 
 ## Success Criteria
 
-- Every slice behavior receives an evidence-linked fidelity judgment.
-- Minimalism and idiom quality are assessed against the selected output profile.
-- Every major drift is fixed or covered by an accepted decision and required approval.
-- Deterministic verification is not duplicated or misrepresented as semantic judgment.
-- Human approval, remaining risk, coexistence, and rollback implications are explicit.
-- Plan, traceability, decisions/exceptions, review report, and lifecycle state agree.
-- Global denominators and remaining stable IDs are reported after approval.
-- Remaining declared-scope work forces `approve -> plan`; only a passing implementation-stage
-  migrate-audit certificate can make final cutover eligible.
+- All generated Java files reviewed for semantic fidelity
+- Ponytail audit completed — no unjustified over-engineering
+- All DRIFT_MAJOR items resolved (fixed or justified in decisions.md)
+- Phase tagged in git: `migrate-phase-N-complete`
+- state.md updated with completion status
+- Progress metrics accurate

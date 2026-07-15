@@ -1,219 +1,150 @@
 # migrate-execute
 
-Implement one planning-approved dependency-seam slice from characterized behavior and a
-validated `planned` plan, while keeping the legacy path available for later verification
-and cutover.
+Execute migration plans — translate C++ to Java with wave-based parallel agents, build/test gates after each wave, and auto-fix capabilities.
 
 ## When to Use
 
-- After migrate-plan selects an active slice and `state.json.status` is `execute`.
-- To continue an interrupted active slice after migrate-resume validates recovery.
-- To rework implementation after deterministic verification or judgment review returns the
-  lifecycle to `execute`.
+After migrate-plan N is confirmed by the user. This is the third step in the phase cycle: Analyze → Plan → **Execute** → Verify → Review.
 
 ## Inputs
 
-- **Slice ID** (optional) — defaults to `state.json.active_slice`; an explicit ID must match it.
-- **--task ID** (optional) — execute one ordered task from the slice detail plan.
-- **--interactive flag** (optional) — require confirmation between reversible task checkpoints.
-- **--dry-run flag** (optional) — report files, commands, dependencies, side effects, and
-  checkpoints without writing target or migration state.
+- **Phase number** (required) — which phase to execute
+- **--wave N** (optional) — execute only wave N (for pacing, retry, or granular control)
+- **--interactive** (optional) — one plan at a time, no parallel agents, user checkpoints between plans
+- **--dry-run** (optional) — show what would be executed without writing files
 
-**Required state:** the active `SLICE-NNNN` JSON and Markdown plans, all referenced source
-units, behavioral contracts, characterization evidence, target/test mappings, decisions,
-exceptions, dependencies, `scope.json`, and `target-inventory.json` validate; state is
-`execute` (or a validated resume to it).
+**Required state:**
+- Plans exist: `.migration/phases/NN-slug/nn-pp-plan.md`
+- Phase status: "planned" or "executing"
+- Target project compiles: `cd app && ./gradlew compileJava` passes
+
+**Read config.json → check output_type** to determine which waves apply.
 
 ## Procedure
 
-### Step 1: Revalidate the Execution Contract
+### Step 1: Discover and Order Plans
 
-1. Validate the current `.migration/` artifact graph and confirm the source revision, plan checksum,
-   selected profiles, `{source_root}`, and `{target_root}` have not drifted. Resolve the target
-   root from the project root without following a symlink outside the project. Structural graph
-   validity is not a claim that the declared scope is fully implemented.
-2. Read the active plan completely with every referenced {{source_language}} source unit,
-   `BEH`, characterization `EVID`, mapping, target/pair/output standards, decision, and
-   exception. Do not translate from the plan summary alone.
-3. Refuse execution if any required behavior lacks characterization evidence, an exception
-   is unapproved/expired, a prerequisite slice is not approved, or a target file is owned by
-   another concurrently active slice. Resolve every planned target/build path and anticipated
-   persistent tool output before mutation. Refuse an outside-`{target_root}` path unless an
-   accepted orchestration decision explicitly owns that path and its command topology.
-4. Confirm the slice remains independently releasable and reversible. If implementation
-   reveals a false seam, missing contract, new public behavior, or unsafe rollback, stop and
-   return to the appropriate earlier lifecycle state instead of silently expanding scope.
-5. In dry-run mode, report the ordered tasks, exact resolved target and build/tooling paths,
-   command working directories, anticipated persistent outputs, dependency changes,
-   coexistence controls, and rollback checkpoint, then exit without mutation.
+1. Read all nn-pp-plan.md files for this phase
+2. Parse YAML frontmatter → extract wave assignments and dependencies
+3. Group plans by wave number
+4. Read config.json output_type — if library/sdk, wave 6 (adapter/in/web) does not apply; if cli, wave 6 becomes adapter/in/cli
+5. Verify no dependency violations within wave grouping
+6. If `--wave N` specified, filter to only that wave
+7. Update state.md: `status: executing`
 
-### Step 2: Establish a Reversible Workspace
+### Step 2: Execute Waves Sequentially
 
-6. Use the project's existing version-control/reversible-change mechanism. Create a
-   slice-scoped branch or checkpoint only when project policy permits; never modify unrelated
-   user work, rewrite history, or assume permission to publish changes.
-7. Ensure the legacy implementation remains runnable and the planned selector/routing shim
-   defaults to the legacy path. Execution must not move consumers, production traffic, or
-   durable state; those actions belong to approved cutover.
-8. Stage dependency/build changes first and use only the plan-approved substitutions,
-   versions, alignment constraints/platforms, integrity metadata, and license/security
-   decisions. Keep the build launcher, definitions, metadata, project-local caches, and output
-   beneath `{target_root}` unless the plan cites its accepted orchestration decision. A
-   coordinate catalog alone is not resolved-version enforcement.
-9. Mark the plan `in-progress` and preserve state `execute`. Do not advance traceability or
-   state based on file presence alone.
+For each wave (1 through max):
 
-### Step 3: Implement in Dependency Order
+#### 2a. Pre-Wave Check
+- Verify all dependencies from prior waves are satisfied (summary.md exists for each dependency)
+- If a dependency failed, STOP and report
 
-10. Execute the plan's ordered tasks. Tasks may run concurrently only when their dependency
-    prerequisites are complete, their owned target files do not overlap, and they cannot
-    mutate the same build metadata, generated output, state, fixture, or external resource.
-    Architectural layer waves are not a substitute for this dependency check.
-11. For every target unit:
+#### 2b. Spawn Parallel Translator Agents
 
-    - implement only behavior referenced by its `BEH`/`DEC`/`EXC` trace;
-    - preserve public inputs, outputs, errors, side effects, ordering, resource lifetime,
-      concurrency, numeric/serialization, and platform contracts;
-    - use idiomatic {{target_language}} only where equivalence and accepted modernization
-      permit it;
-    - keep framework/infrastructure types out of profile-neutral policy and public contracts
-      unless the selected output profile requires them; and
-    - retain stable `TGT-NNNN` identity in the execution report even if files are renamed.
+For each plan in this wave, spawn a translator agent with:
 
-12. Apply the selected architecture, not a universal structure.
-{{#if output_profile == 'service'}}
-    For this service, implement business-capability modules with policy/application ports and
-    adapters, a visible composition root, boundary validation/error translation, and a
-    framework-free domain.
-{{/if}}
-{{#if output_profile == 'library'}}
-    For this library, enforce API/internal/SPI surfaces, create no mandatory application
-    process, and keep runtime-framework types out of the core consumer API.
-{{/if}}
-{{#if output_profile == 'sdk'}}
-    For this SDK, enforce API/internal/SPI surfaces plus stability metadata, diagnostics,
-    compatibility guidance, documentation, and executable consumer examples.
-{{/if}}
-{{#if output_profile == 'cli'}}
-    For this CLI, keep command parsing and process I/O at the boundary, core operations
-    independent of global streams/process exit, exit/stream behavior stable, and packaging
-    testable through the installed launcher.
-{{/if}}
+**Agent receives (via file references):**
+- The nn-pp-plan.md file
+- The C++ source files listed in the plan
+- The C++ header files listed in the plan
+- Java target standards reference
+- mapping.md (for package/naming)
+- decisions.md (for architectural context)
+- The output_type from config.json
 
-13. Translate ownership and RAII into explicit resource ownership and deterministic cleanup
-    where required. Test success, error, cancellation, shutdown, and partial-construction
-    paths; automatic memory reclamation is not equivalent cleanup evidence.
-14. Implement concurrency from characterized happens-before, affinity, atomicity, ordering,
-    cancellation, and progress requirements. Do not mechanically replace primitives whose
-    memory or scheduling semantics differ.
-15. Implement undefined/implementation-defined, intentional-change, dead-code, native,
-    unsupported dependency, and platform policies exactly as their decisions/exceptions
-    specify. Any new uncertainty gets a stable decision/exception and blocks affected work;
-    do not leave an untracked review comment or guessed behavior.
+**Agent must follow these iron laws:**
+1. Read ALL C++ source completely before writing ANY Java
+2. Follow the plan's translation table EXACTLY — no freelancing
+3. Place Java files in correct hexagonal package
+4. Apply Java 25 / Spring Boot 4.x standards
+5. Domain classes have ZERO Spring imports
+6. Write test file(s) covering every public method (at minimum), same behavioral paths as C++, boundary values and null cases
+7. Verify compilation: `./gradlew compileJava`
+8. Run tests: `./gradlew test --tests 'TargetClassTest'`
+9. Write nn-pp-summary.md with execution record
+10. Commit: `migrate(phase-N/plan-PP): SourceClass → TargetClass`
+11. Mark uncertain translations: `// MIGRATION-REVIEW: <reason>`
+12. Respect output_type — libraries have NO Spring Boot annotations in production code; CLIs use picocli @Command not @RestController
 
-### Step 4: Implement Contract-Derived Tests and Coexistence
+#### 2c. Post-Wave Gates (BLOCKING)
 
-16. Create or update each planned `TEST-NNNN` harness from its behavioral contracts and
-    characterization fixtures. Cover observable paths, boundaries, supported variants, and
-    relevant failure/concurrency/resource cases; do not use a blanket one-test-per-method
-    rule or tests that merely mirror implementation internals.
-17. Preserve differential capability so source and target can receive equivalent inputs
-    during verification. Keep normalization rules linked to their accepted decisions.
-18. Implement the planned coexistence selector/facade/route/shim with the legacy path as the
-    safe default. Shadow work must suppress or isolate side effects; mirrored writes require
-    the plan's idempotency, ordering, reconciliation, and partial-failure controls.
-19. Implement observability needed to distinguish legacy and target paths without changing
-    public behavior or exposing secrets. Add the planned rollback mechanism, but do not
-    invoke cutover or decommission actions during execution.
+After all agents in the wave complete, run gates:
 
-### Step 5: Use Fast Feedback Without Claiming Verification
+**Gates for ALL output types:**
+```bash
+# Gate 1: Full project compiles
+cd app && ./gradlew compileJava
 
-20. At each reversible checkpoint, run the narrowest relevant target tests and compile the
-    full target from the configured target root using the exact canonical commands:
+# Gate 2: All tests pass
+./gradlew test
+```
 
-    ```bash
-    cd {target_root} && {{test_single_command}}
-    cd {target_root} && {{compile_command}}
-    ```
+**Gate 3: ArchUnit hexagonal rules pass**
+```bash
+./gradlew test --tests '*HexagonalArchitectureTest'
+```
+- For service: includes Spring-specific checks
+- For library/sdk: checks domain purity and dependency direction only
+- For cli: checks adapter/in/cli/ instead of adapter/in/web/
 
-    These are the default invocations. Use an alternate working directory only when the plan
-    cites the accepted orchestration decision and gives the exact replacement commands.
+**Gate 4: Coverage threshold met (if configured)**
+```bash
+./gradlew jacocoTestReport jacocoTestCoverageVerification
+```
 
-21. Before handing off, run the configured target test command from `{target_root}`:
+**If ANY gate fails:**
+1. Identify which plan's code caused the failure
+2. Spawn a fixer agent with: error output, the failing Java file(s), the plan, C++ source for reference
+3. Fixer produces corrected code + amended commit
+4. Fixer rules: fix the SPECIFIC error, don't redesign, don't change public API, don't remove tests
+5. Re-run gates (max 2 fix attempts per wave)
+6. If still failing after 2 attempts: STOP, report to user, mark plan as blocked
 
-    ```bash
-    cd {target_root} && {{test_command}}
-    ```
+#### 2d. Post-Wave Bookkeeping
+- Record wave completion in state.md
+- Update progress metrics (files_migrated, lines_java_generated)
+- Log timing metrics
 
-    These runs are execution feedback. migrate-verify must rerun all profile-configured
-    deterministic gates in a controlled environment and append authoritative `EVID` records.
-22. Fix only defects within the approved behavior and target boundary. A fix that changes a
-    public contract, dependency choice, architecture boundary, coexistence model, or rollback
-    plan requires returning to characterize, map, or plan with an explicit transition.
-23. If progress requires an unavailable dependency, environment, decision, or approval,
-    create/update the scoped exception, mark the plan `blocked`, and transition
-    `execute -> blocked` with `resume_to: "execute"`. If compilation, tests, generation, or
-    workspace promotion fails, preserve diagnostics and rollback status, create a scoped
-    `quality-gate` exception describing recovery/exit criteria, reference it from
-    `blocked_by`, mark the plan `failed`, and transition `execute -> failed` with
-    `resume_to: "execute"`.
+### Step 3: Phase Completion
 
-### Step 6: Record an Atomic Execution Handoff
+After all waves complete successfully:
 
-24. Write `.migration/plans/SLICE-NNNN-execution.md` containing target/test IDs and exact
-    project-root-relative paths, source/behavior trace, dependency changes, coexistence
-    mechanism, exact command working directories and commands, feedback, generated artifacts,
-    deviations, unresolved risks, and rollback checkpoint. Every uncertainty must reference
-    a `DEC` or `EXC` ID.
-25. Reconcile every created or changed target source, test, build, packaging, generated,
-    deployment, and retained-boundary asset into `.migration/target-inventory.json` with its
-    stable target identity, project-root-relative path, kind, truthful lifecycle status, and
-    SHA-256 checksum. A path on disk that is absent from target inventory is unresolved; a
-    planned target ID without an actual target-inventory entry is not implementation evidence.
-26. Update `traceability.json` links to `implemented`, add actual target/test IDs, and preserve
-    characterization evidence, decisions, and exceptions. Do not add verification evidence
-    that has not been produced.
-27. Keep the plan status `in-progress` until deterministic verification changes it. Do not
-    add the slice to `completed_slices`, approve it, select target traffic, or remove legacy.
-28. Report global declared, accounted, implemented, verified, approved, retained, removed,
-    pending, unknown, unverified, and remaining-slice denominators. The active slice may be
-    fully implemented while global migration remains incomplete.
-29. Stage execution report, target inventory, plan, traceability, and state changes; validate all references
-    and target-file ownership; promote atomically. Keep lifecycle state at `execute` and
-    recommend migrate-verify with the active slice ID; migrate-verify revalidates the handoff
-    and owns the `execute -> verify` transition before running authoritative gates.
+7. Write phase summary: `.migration/phases/NN-slug/nn-phase-summary.md`
+   - Total plans executed: X
+   - Total Java files generated: Y
+   - Total test files: Z
+   - Build status: passing
+   - Test count: N passing
+   - Time elapsed: T
+   - Issues encountered: [list]
+
+8. Run full project test suite one final time
+9. Check coverage report against thresholds
+10. Update state.md:
+    - `status: executed`
+    - Increment `phases_complete` if all plans succeeded
+    - Update `files_migrated` count
+11. Suggest next step: migrate-verify N
 
 ## Outputs
 
-- {{target_language}} implementation, tests, build/tooling files, and project-local build
-  outputs under `{target_root}` in output-profile-specific boundaries.
-- Slice-scoped coexistence, observability, and rollback mechanisms with legacy still active.
-- `.migration/plans/SLICE-NNNN-execution.md` — ID-bearing execution and deviation record.
-- `.migration/traceability.json` — implemented target/test links.
-- `.migration/target-inventory.json` — actual target assets, statuses, and checksums.
-- Updated plan, decision, exception, and state artifacts as required.
-- `.migration/state.json` — remains valid at `execute` for a successful handoff, or records a
-  validated transition to `blocked` or `failed`.
+- Java source files in correct hexagonal packages under `{target_root}`
+- Test files mirroring source structure under `{target_root}/src/test/java/`
+- `.migration/phases/NN-slug/nn-pp-summary.md` per plan — execution record
+- `.migration/phases/NN-slug/nn-phase-summary.md` — phase-level summary
+- Git commits per plan: `migrate(phase-N/plan-PP): Source → Target`
 
 ## Success Criteria
 
-- Only the active, planning-approved dependency-seam slice was implemented; unrelated user
-  work and other slices were preserved.
-- Every target unit and test traces to source behavior, characterization evidence, and any
-  governing decision/exception.
-- Structure matches the selected output profile without universal service/hexagonal leakage.
-- Ownership, concurrency, numeric/serialization, error, platform, and native-boundary
-  semantics follow characterized contracts or explicit approved divergence.
-- Target-owned paths and project-local outputs remain beneath `{target_root}`, or exactly
-  match the outside paths owned by an accepted orchestration decision.
-- The target compiles with `{{compile_command}}` from its approved working directory and
-  configured execution-feedback tests pass, or failure/blocking state accurately records
-  diagnostics and recovery.
-- Legacy remains selectable; coexistence and rollback controls exist; no cutover or
-  decommission occurred.
-- No untracked uncertainty or false completion claim remains.
-- Actual target inventory reconciles every slice-owned target asset, and global remaining-work
-  counts are explicit; file presence or successful execution feedback is not full-scope proof.
-- Successful execution hands off from valid state `execute`; migrate-verify performs the
-  `execute -> verify` transition, and deterministic verification and judgment review remain
-  separate subsequent gates.
+- All plans in the phase executed (or explicitly blocked with reason)
+- Every generated Java file compiles
+- Every generated test passes
+- ArchUnit hexagonal rules pass
+- Coverage thresholds met (or gaps documented)
+- Each plan has a summary.md recording what was done
+- Commits follow format: `migrate(phase-N/plan-PP): Source → Target`
+- Commit validation: no files in domain/ import org.springframework.* (block commit if violated)
+- Commit validation: if Java source files changed, corresponding test files also changed (warn)
+- state.md updated with accurate progress
+- No `// MIGRATION-REVIEW:` comments left unrecorded

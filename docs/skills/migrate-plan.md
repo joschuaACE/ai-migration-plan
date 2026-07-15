@@ -1,246 +1,146 @@
 # migrate-plan
 
-Create schema-valid, dependency-seamed migration slices that can be implemented, verified,
-released, rolled back, and decommissioned independently.
+Generate executable translation plans from analysis — dependency-ordered PLAN.md files for each translation unit with exact instructions a translator agent can follow mechanically.
 
 ## When to Use
 
-- After migrate-map completes and `state.json.status` is `plan`.
-- After an approved slice when more mapped behavior remains (`approve -> plan`).
-- When verification or review returns to planning because the slice boundary, dependency,
-  or acceptance contract—not just its implementation—must change.
+After migrate-analyze N completes successfully. Plans MUST be generated before execution. This is the second step in the phase cycle: Analyze → **Plan** → Execute → Verify → Review.
 
 ## Inputs
 
-- **Scope IDs** (optional) — mapped `BEH-NNNN`, `TGT-NNNN`, or candidate seam IDs;
-  defaults to the smallest unplanned, dependency-ready behavior set.
-- **--strategy flag** (optional) — `conservative`, `modern`, or `hybrid` implementation
-  guidance inside the configured migration strategy. It never authorizes behavioral drift.
-- **--all-ready flag** (optional) — plan every currently dependency-ready slice, while still
-  selecting only one active slice for execution.
+- **Phase number** (required) — which phase to plan
+- **--strategy flag** (optional) — override default translation strategy:
+  - `conservative`: 1:1 structural mapping, minimize redesign
+  - `modern`: leverage Spring Boot 4.x idioms fully, accept structural divergence
+  - `hybrid` (default): conservative for core logic, modern for infrastructure
 
-**Required state:** state is `plan` (or a validated resume to it); all source inventory,
-scope and target inventory, behavioral contracts, characterization evidence, mapping,
-decisions, exceptions, and traceability structurally validate; every planned behavior has at
-least one target/test mapping.
+**Required state:**
+- `.migration/phases/NN-slug/nn-analysis.md` must exist
+- Phase status must be "Analyzing" complete or "Planning"
 
 **Context to read before starting:**
-
-1. `config.json`, `scope.json`, `state.json`, `inventory.json`, `target-inventory.json`, and
-   `traceability.json`.
-2. Every in-scope behavioral contract and characterization evidence record.
-3. `mapping.md` target units, dependency DAG, output-profile boundary, and coexistence seams.
-4. Selected generic, source, target, pair, and output-profile standards in merge precedence.
-5. Dependency substitutions, accepted decisions, approved exceptions, and unresolved risks.
+1. nn-analysis.md → understand the module deeply
+2. mapping.md → know where each class lands in hexagonal structure
+3. decisions.md → respect all recorded decisions
+4. Java target standards → enforce architecture rules
+5. config.json → check output_type (determines which waves apply)
+6. .migration/research/dependency-map.md → map each C++ dependency to its Java equivalent for translation
 
 ## Procedure
 
-### Step 1: Select an Independently Releasable Slice
+### Step 1: Decompose into Translation Units
 
-1. Validate the current migration artifact graph and confirm mapping still matches the source
-   revision and characterized contracts. Structural validity does not prove all declared work
-   is planned or migrated.
-2. Reconcile the global planning denominator before choosing a slice. List every required
-   non-excepted behavior as already approved, owned by an existing active/future slice, or
-   unowned. Report retained, removed, pending, unknown, unmapped, planned, implemented,
-   verified, and approved counts with stable IDs. Every required behavior must have one slice
-   owner or an explicit shared ownership rule; an orphan blocks planning approval.
-3. Select behavior at a real dependency seam: protocol route, consumer-facing API/facade,
-   message or job boundary, command/shim, native process boundary, or another selector that
-   lets legacy and target coexist. Do not group work merely because files share a directory,
-   package, phase number, or architectural layer.
-4. Make the slice as small as possible while still independently buildable, testable,
-   observable, selectable, and reversible. If it cannot be released without unrelated
-   unfinished work, split it or explain the coupling in an accepted decision.
-5. Allocate the next stable `SLICE-NNNN` ID. Slice identity survives plan-file renames and
-   retries; a materially different release boundary gets a new ID and supersedes the old plan.
-6. Build the slice dependency DAG using other `SLICE` IDs. Every dependency must already be
-   approved or appear as an explicit earlier plan; cycles require a boundary decision.
+1. Read nn-analysis.md completely
+2. Identify translation units (one plan per):
+   - Each C++ class that becomes a domain entity/service → 1 plan
+   - Each C++ class that becomes a port interface + adapter → 1 plan
+   - Each C++ class that becomes a use case → 1 plan
+   - Groups of tightly-coupled small classes → 1 plan (if <100 LOC total)
+3. For each unit, determine target hexagonal layer from mapping.md
 
-### Step 2: Prove Planning Readiness
+### Step 2: Dependency Order into Waves
 
-7. For every included `SRC` and `BEH` ID, verify characterization `EVID` records are present,
-   reproducible, and cover supported variants. Translation is forbidden if required behavior
-   is represented only by prose or an unapproved gap.
-8. Resolve each dependency from the pair dependency map. Record the exact selected
-   replacement, retained interoperability boundary, version/alignment/integrity policy,
-   license/security constraints, and confidence. An unsupported dependency or platform must
-   be isolated with an approved `EXC` or block planning.
-9. Resolve language-semantic risks explicitly: ownership/RAII, concurrency/memory order,
-   numeric/serialization behavior, macros/templates, ABI/native code, and undefined or
-   implementation-defined behavior. Reference the `DEC`/`EXC` that authorizes stabilization,
-   intentional change, legacy retention, or removal.
-10. Exclude confirmed dead code only through its approved `dead-code` exception and preserve
-   its decommission trace. Intentional changes need an accepted decision, replacement
-   behavior, consumer impact, communication, tests, approval, and compatibility exception.
-11. Apply the architecture from `{{output_profile}}` and `{{architecture_style}}`.
-{{#if output_profile == 'service'}}
-    Preserve modular policy/application, port, adapter, and composition-root boundaries.
-{{/if}}
-{{#if output_profile == 'library'}}
-    Preserve API/internal/SPI, module export, and consumer compatibility boundaries without
-    an application process.
-{{/if}}
-{{#if output_profile == 'sdk'}}
-    Preserve API/internal/SPI and consumer compatibility boundaries, and deliver stability
-    metadata, documentation, executable examples, and consumer migration guidance.
-{{/if}}
-{{#if output_profile == 'cli'}}
-    Preserve command/config/stream/exit/package contracts with only justified internal ports.
-{{/if}}
-    Target annotations, frameworks, and package conventions may not leak into profile-neutral
-    policy or public contracts unless the selected profile explicitly makes them part of the
-    product.
+Assign each plan to a wave following hexagonal layer order. Wave availability depends on `output_type` from config.json:
 
-    Before continuing, enumerate every persistent target path the slice may create or change,
-    including sources, tests, build definitions and launchers, dependency metadata, generated
-    sources, project-local caches, reports, and packaged output. Resolve each path from the
-    project root and require it to remain beneath `{target_root}`. Any alternate build root
-    requires an accepted orchestration decision that lists the outside-target paths,
-    ownership, command working directory, and rollback; an existing directory alone is not
-    authorization.
+```
+Wave 1: domain/model/     — entities, value objects, records, enums (ALL types)
+Wave 2: domain/port/      — interfaces for in/ and out/ (ALL types)
+Wave 3: domain/service/   — business rules (ALL types)
+Wave 4: application/      — use cases, DTOs, mappers (ALL types)
+Wave 5: adapter/out/      — persistence, clients, messaging (ALL types)
+Wave 6: adapter/in/       — controllers (service), CLI commands (cli), SKIP for library/sdk
+Wave 7: config/           — Spring config (service/cli), auto-config (library/sdk if Spring support)
+```
 
-### Step 3: Define Delivery, Coexistence, and Recovery
+**Output type adjustments:**
+- **library/sdk:** Skip Wave 6 entirely. Wave 7 is optional (only if providing Spring auto-configuration for consumers). Add a Wave 5b: `spi/` — default SPI implementations.
+- **cli:** Wave 6 becomes adapter/in/cli/ (Picocli @Command classes instead of @RestController)
+- **service:** All waves apply as shown (default behavior)
 
-12. Describe the slice's independently releasable boundary in concrete terms: artifact or
-    deployable unit, selector/routing mechanism, consumer cohort, state ownership, and
-    observable success/failure signals.
-13. Define coexistence before implementation: how legacy remains available, how the selected
-    boundary chooses legacy or target, how shadow execution isolates side effects, how any
-    mirrored state is ordered/idempotent/reconciled/recovered, and which evidence
-    distinguishes paths and cohorts.
-{{#if output_profile == 'service'}}
-    Use a route, protocol facade, message/worker selector, or similarly observable service
-    boundary and record target-versus-legacy telemetry.
-{{/if}}
-{{#if output_profile == 'library'}}
-    Use a compatibility facade, parallel namespace/version, or consumer binding and track
-    consumer adoption separately from publication.
-{{/if}}
-{{#if output_profile == 'sdk'}}
-    Use a compatibility layer/version selector and representative consumer applications;
-    track documentation and supported-consumer adoption separately from publication.
-{{/if}}
-{{#if output_profile == 'cli'}}
-    Use a launcher or shim selector and isolate/capture files, stdout, stderr, and exit status.
-{{/if}}
+Within each wave, order by internal dependency (if A uses B, B comes first).
 
-14. Define a rollback procedure with trigger thresholds, operator/owner, maximum safe window,
-    state/data reconciliation, exact selector reversal, and a verification command. “Revert
-    the commit” is insufficient when consumers, traffic, schemas, or state have changed.
-15. Define cutover preflight and human approval: required deterministic evidence, judgment
-    findings, risk owner, approvers, change window, communication, and go/no-go criteria.
-16. Define decommission obligations: adoption/traffic proof, retention window, data/archive
-    needs, dependency removal, launcher/route cleanup, consumer notification, operational
-    runbook updates, and post-removal verification. Cutover and decommission are separate.
+### Step 3: Generate Plan Files
 
-### Step 4: Select Profile-Configured Gates
+For each translation unit, create nn-pp-plan.md with YAML frontmatter:
 
-17. Start with the selected output profile's required quality gates and add behavior-specific
-    gates. At minimum, each slice includes `behavioral-contracts`, `build`, and the applicable
-    target tests; use the exact canonical compile command `{{compile_command}}` and configured
-    test command `{{test_command}}`, both with the default project-root invocation
-    `cd {target_root} && <command>`. Confirm the working directory, launcher, build definition,
-    and expected report paths agree before approving the plan. An accepted orchestration
-    decision must replace that invocation consistently in every affected gate and hook.
-18. Add only applicable architecture, public/binary API, static analysis, dependency graph
-    and integrity, security, changed-code coverage, documentation/examples, packaging,
-    concurrency, performance, platform, or integration gates. Record exact commands,
-    environment, expected artifacts, and pass conditions.
-19. Coverage is one risk signal, not a universal completion claim. Use a project/profile
-    approved changed-code or contract-coverage threshold where configured; never impose a
-    blanket percentage or one-test-per-method rule. Every `BEH` must instead have a target
-    test/evidence path or an approved exception.
-20. Separate gate types explicitly:
+```yaml
+---
+phase: <N>
+plan: <PP>
+wave: <1-7>
+title: "<descriptive name>"
+source_files:
+  - "<path to C++ source>"
+  - "<path to C++ header>"
+target_files:
+  - "<target Java file path>"
+  - "<target test file path>"
+target_layer: "domain/service"
+depends_on: [<plan-ids this depends on>]
+dependency_map_applied: true
+complexity: <1-5>
+strategy: <conservative|modern|hybrid>
+must_haves:
+  truths:
+    - "<behavioral truth that must hold after translation>"
+  artifacts:
+    - "<file that must exist after execution>"
+  tests:
+    - "<test that must pass>"
+---
+```
 
-    - migrate-verify will execute deterministic commands and append reproducible
-      `EVID-NNNN` records; and
-    - migrate-review will judge semantic fidelity, idiomatic {{target_language}} design,
-      architecture intent, risk, and whether modernization is justified.
+Then the plan body with these sections:
 
-    A review opinion cannot replace a failed deterministic gate, and repeated command output
-    is not a substitute for judgment review.
+- **Objective** — what this plan accomplishes in one sentence
+- **Source Analysis Summary** — key findings from ANALYSIS.md relevant to this unit
+- **Translation Table** — C++ Element → Java Target → Layer → Notes (every public method mapped)
+- **Dependency Mapping** — from dependency-map.md: C++ Dependency → Java Replacement → Confidence → Notes. Translators MUST use the Java replacements listed. Do NOT introduce alternatives.
+- **Target Structure** — skeleton of the Java class with package, constructor, and method signatures
+- **Spring Annotations** — which annotations to apply where (none in domain/)
+- **Test Strategy** — port existing C++ tests, add boundary value tests, test naming convention: should_\<behavior\>_when_\<condition\>
+- **Dependencies Required** — any new Gradle dependencies needed
+- **Verification Criteria** — compile, tests pass, behavioral equivalence checks, ArchUnit passes
 
-### Step 5: Write Plans and Traceability
+### Step 4: Plan Verification
 
-21. Write `.migration/plans/SLICE-NNNN.json` using exactly the plan schema fields:
+4. After all plans generated, verify:
+   - Every source file from ANALYSIS.md is covered by at least one plan
+   - No target file appears in two plans (no conflicts)
+   - Wave ordering respects dependencies (no plan depends on a later wave)
+   - Every public method in C++ has a mapping entry
+   - Every C++ dependency used in this phase's source files has a mapping entry in the plan
+   - Every plan has at least one `must_haves.truths` entry
+   - Every plan produces at least one test file
 
-    ```json
-    {
-      "$schema": "schemas/plan.schema.json",
-      "schema_version": "2.0",
-      "id": "SLICE-NNNN",
-      "status": "planned",
-      "source_units": ["SRC-NNNN"],
-      "behavioral_contracts": ["BEH-NNNN"],
-      "target_units": ["TGT-NNNN"],
-      "dependencies": [],
-      "release_boundary": "Independently selectable delivery boundary",
-      "rollback": "Tested selector and state recovery procedure",
-      "verification_gates": ["behavioral-contracts", "build", "tests"],
-      "approval_refs": []
-    }
-    ```
+5. If verification fails:
+   - Identify gaps
+   - Generate additional plans or adjust existing ones
+   - Re-verify (max 3 iterations)
 
-22. Write `.migration/plans/SLICE-NNNN.md` as the ID-bearing executable detail view with:
+### Step 5: Gate & Update
 
-    - objective and behavior/evidence/source/target/test trace matrix;
-    - exact project-root-relative target files, build/tooling files, generated outputs, and
-      output-profile boundary constraints;
-    - dependency selections and prerequisites;
-    - ordered implementation tasks small enough to audit and retry;
-    - target test strategy derived from behavior contracts and supported variants;
-    - deterministic gate commands and expected artifacts;
-    - coexistence, cutover preflight, rollback rehearsal, and decommission tasks;
-    - accepted decisions/exceptions and forbidden scope; and
-    - risk owner, approval gate, and block/failure escalation criteria.
-
-23. Update each covered trace to `planned`, preserving characterization evidence and adding
-    the slice's target/test/decision/exception references. Do not mark implementation or
-    verification complete in advance.
-24. Check that all plan source, behavior, target, dependency, decision, exception, and
-    evidence IDs resolve; no target file is written by two concurrently executable slices;
-    and no slice depends on a later or nonexistent plan.
-25. Recompute the global denominator after writing the slice. Record every remaining behavior,
-    its owner/future slice, dependency readiness, and next safe action. A planned slice may be
-    approved for execution while global work remains, but neither that approval nor an empty
-    active-slice field is a whole-scope completion claim.
-26. Present the slice boundary, global remaining-work report, risk, gates, coexistence,
-    rollback, and exclusions for human
-    planning approval. If approval or a dependency is missing, transition to `blocked` with
-    a scoped exception and `resume_to: "plan"`; planning/validator failure transitions to
-    `failed` with a scoped `quality-gate` exception, recovery action, and the same resume state.
-27. Stage plan JSON/Markdown, traceability, and state together; validate and promote
-    atomically. Set `active_slice` to the human-confirmed ready slice (whose plan status is
-    still `planned`), apply `plan -> execute`, and recommend migrate-execute with that ID.
+6. Present plan summary to user:
+   - Plans generated: N
+   - Waves: M
+   - Total source files covered: X
+   - Estimated complexity distribution
+7. Ask user to confirm plans (unless auto mode in STATE)
+8. Update state.md: `status: planned`, record plan count
+9. Suggest next step: migrate-execute N
 
 ## Outputs
 
-- `.migration/plans/SLICE-NNNN.json` — schema-valid dependency-seam slice plan.
-- `.migration/plans/SLICE-NNNN.md` — executable implementation, gate, release, and recovery view.
-- `.migration/traceability.json` — in-scope links advanced to `planned`.
-- `.migration/decisions/DEC-NNNN.json` and `.migration/exceptions/EXC-NNNN.json` as required.
-- `.migration/state.json` — active slice and validated transition to `execute`, `blocked`, or
-  `failed`.
+- One or more `.migration/phases/NN-slug/nn-pp-plan.md` files (one per translation unit)
 
 ## Success Criteria
 
-- Every slice is independently buildable, testable, observable, selectable/releasable, and
-  reversible at a real dependency seam; grouping is not based on file/package waves.
-- Every planned source/behavior has characterization evidence and stable source, target,
-  test, decision, exception, and evidence traceability as applicable.
-- Every required behavior is approved, owned by an active/future slice, or reported as an
-  explicit blocking orphan; global trace-status and disposition denominators reconcile.
-- Architecture and gates come from the selected output profile without universal service or
-  hexagonal assumptions.
-- Unsupported scope, dead code, intentional change, and undefined/implementation-defined
-  behavior have explicit policy records, owners, approvals, and mitigation.
-- Coexistence, cutover preflight, rollback, and decommission obligations are executable and
-  risk-owned.
-- Planned target and build/tooling paths remain beneath `{target_root}`, or an accepted
-  orchestration decision explicitly owns every exception and alternate command directory.
-- Verification commands and judgment review criteria are separate and explicit.
-- Plan JSON, dependency DAG, traceability, and state validate atomically; successful state
-  ends in `execute` with exactly one active slice.
-- Planning reports exact remaining-work IDs and never presents one slice, a target foundation,
-  or structurally valid artifacts as whole-scope completion.
+- Every source file in the phase maps to at least one plan
+- Plans are dependency-ordered into waves (no forward references)
+- Each plan has YAML frontmatter with complete metadata
+- Each plan has a translation table (C++ → Java mapping)
+- Each plan specifies test strategy
+- Each plan has verification criteria
+- Wave ordering matches hexagonal layers
+- User confirmed the plans
+- state.md updated

@@ -1,197 +1,134 @@
 # migrate-map
 
-Map characterized {{source_language}} contracts to stable {{target_language}} units and
-output-profile-specific boundaries without generating implementation code.
+Map C++ codebase structure to target Java hexagonal package layout — produces mapping.md that defines the structural transformation for every source file, class, struct, enum, and free function.
 
 ## When to Use
 
-- After migrate-analyze has completed and `state.json.status` is `map`.
-- With `--refresh` after accepted source, behavior, output-profile, or architecture changes.
-- When verification/review returns the lifecycle to mapping because a target boundary was
-  wrong, not merely because implementation had a local defect.
+- During migrate-init (called automatically as part of initialization)
+- With --refresh when inventory.md is updated after discovering new files
+- When the mapping needs adjustment before planning
 
 ## Inputs
 
-- **Behavior or source-unit IDs** (optional) — limit a refresh to affected `BEH-NNNN` or
-  `SRC-NNNN` records; defaults to every non-excepted trace.
-- **--refresh flag** (optional) — reconcile mappings while preserving stable target/test IDs.
-- **Architecture decision IDs** (optional) — accepted project variations from the selected
-  output profile; absence means use `{{architecture_style}}` from `{{output_profile}}`.
+- **--refresh flag** (optional) — update existing mapping.md with new inventory entries
+- **--style flag** (optional) — architecture variant:
+  - `hexagonal` (default): single module, package-by-layer
+  - `modular-hexagonal`: multi-module Gradle project, hexagonal within each
 
-**Required state:** all artifacts and evidence checksums validate; state is `map` (or a
-validated resume to it); every reachable public behavior has characterization evidence or
-an approved exception.
+**Required state:**
+- `.migration/inventory.md` must exist
+- `.migration/config.json` must exist (for group_id, artifact_id, output_type)
 
 **Context to read before starting:**
-
-1. `config.json` and `scope.json`, especially `output_profile`, strategy, roots, completion
-   policy, global denominators, source snapshot, and project decisions.
-2. `inventory.json`, `target-inventory.json`, every applicable `BEH-NNNN`, characterization
-   `EVID-NNNN`, and `traceability.json`.
-3. Characterization analysis, dependency map, risk matrix, and source public-surface view.
-4. Generic boundary rules, selected target standards, pair mappings, selected output
-   profile, and its target-specific profile document.
-5. Existing decisions and exceptions, including intentional changes and unsupported scope.
+1. inventory.md → know all source files
+2. config.json → get target group/artifact IDs and output_type
+3. C++ source tree → understand namespace and directory structure
 
 ## Procedure
 
-### Step 1: Validate Mapping Readiness
+### Step 1: Analyze C++ Structure
 
-1. Revalidate the full state graph and source revision. Stop if any referenced behavior,
-   evidence, decision, or exception is missing, stale, or the wrong artifact kind.
-2. Confirm each non-excepted trace has at least one evidence-backed behavioral contract.
-   Mapping must not fill characterization gaps with assumptions.
-3. Identify externally observable seams and dependency directions using callers, consumers,
-   side effects, deployment/publication boundaries, data ownership, and change cadence.
-   Source folders and classes are evidence, not automatic target modules.
-4. Allocate stable `TGT-NNNN` IDs for logical target units and `TEST-NNNN` IDs for planned
-   target contract tests. Preserve IDs through package/file renames; splitting or merging
-   requires new IDs plus an explicit mapping record.
+1. Parse C++ namespace hierarchy from source files
+2. Map C++ directories to logical modules
+3. Identify the dependency graph between namespaces/directories
+4. Classify each C++ construct by its nature:
 
-### Step 2: Select Architecture From the Output Profile
+| C++ Construct | Classification Criteria | Target Layer |
+|--------------|------------------------|-------------|
+| Pure algorithm/computation | No I/O, no external deps | domain/service |
+| Data structure (struct/class with mostly fields) | Primarily data holder | domain/model |
+| Abstract base class | Virtual methods, no implementation | domain/port/in or out |
+| Database/file I/O class | Reads/writes external state | domain/port/out (interface) + adapter/out (impl) |
+| Network client | Makes HTTP/gRPC/socket calls | domain/port/out (interface) + adapter/out/client (impl) |
+| Request handler / CLI entry | Receives external commands | adapter/in/web (service) or adapter/in/cli (cli) or N/A (library/sdk) |
+| Configuration parser | Reads config files/env | config/ (@ConfigurationProperties) |
+| Test file | gtest/catch2/etc | src/test/java (mirror structure) |
+| Enum definition | enum/enum class | domain/model (Java enum) |
+| Constants / defines | #define, constexpr | domain/model (constants class) or config |
+| Free utility functions | Stateless helpers | domain/service or application/usecase |
+| Thread/executor setup | Threading infrastructure | config/ (executor bean) |
+| Event/callback system | Observer pattern | domain/port/in + adapter/in/messaging |
 
-5. Apply only the selected profile's architecture.
+### Step 2: Generate Package Mapping
 
-{{#if output_profile == 'service'}}
-   For this service, use the modular-hexagonal default: organize by business capability,
-   then domain policy, application/use cases, inbound/outbound ports, adapters, and a visible
-   composition root. A module communicates with another through a published application
-   contract or event, never another module's persistence model or adapter.
-{{/if}}
-{{#if output_profile == 'library'}}
-   For this library, map consumer-facing contracts to a deliberate API, implementation
-   details to enforced internal modules/packages, and only genuine consumer-supplied
-   extension points to SPI. Do not manufacture service ports, web adapters, or an
-   application process.
-{{/if}}
-{{#if output_profile == 'sdk'}}
-   For this SDK, apply API/internal/SPI boundaries and additionally map stability metadata,
-   a compatibility facade, diagnostics, documentation, executable examples, upgrade
-   guidance, and supported consumer/service matrices.
-{{/if}}
-{{#if output_profile == 'cli'}}
-   For this CLI, map argument/config/stream/exit/process handling to command boundaries and
-   keep core operations independent of process-global I/O. Add ports/adapters only where
-   replaceable I/O, multiple front ends, or domain complexity justifies them; do not force
-   the service layout.
-{{/if}}
+For each C++ namespace/directory, determine the Java package:
 
-6. If project needs conflict with the selected profile, create an accepted `DEC-NNNN` with
-   rationale, affected behavior IDs, consequences, enforcement, and approval. Do not encode
-   the exception as an unexplained package name.
+```markdown
+## Namespace Mapping
+| C++ Namespace | Java Package | Hexagonal Layer |
+|--------------|-------------|-----------------|
+| core:: | com.company.app.domain.service | domain |
+| data:: | com.company.app.domain.model | domain |
+| db:: | com.company.app.adapter.out.persistence | adapter/out |
+| net:: | com.company.app.adapter.out.client | adapter/out |
+| api:: | com.company.app.adapter.in.web | adapter/in |
+| config:: | com.company.app.config | config |
+| util:: | com.company.app.domain.service | domain (or remove if JDK covers it) |
+```
 
-### Step 3: Map Contracts, Not Syntax Alone
+**Output type adjustments to mapping:**
+- **library/sdk:** No `adapter/in/web` or `adapter/in/messaging` targets. Classes that would be controllers in a service instead become part of the public API surface (port/in interfaces). Export headers map to domain/port/in.
+- **cli:** `adapter/in/web` becomes `adapter/in/cli`. HTTP handlers become CLI command classes.
+- **service:** All targets available (default behavior).
 
-7. For each behavioral contract, define target units responsible for policy, orchestration,
-   boundary translation, persistence/I/O, composition, packaging, and tests as applicable.
-   One source unit may map to several target units and several source units may merge when
-   the behavior boundary supports it.
-8. Map every public input, output, error, side effect, ordering guarantee, resource lifetime,
-   concurrency constraint, numeric/serialization rule, and platform condition. Reference
-   the `BEH`, `DEC`, `EXC`, and characterization `EVID` IDs that constrain each target unit.
-9. Map ownership/RAII and native resources to explicit {{target_language}} lifecycles and
-   cleanup tests. Map concurrency from characterized happens-before and progress semantics,
-   not by replacing syntax token for token.
-10. Map macros, templates, generated code, ABI/plugin boundaries, and binary/native
-    dependencies using the pair profile. For unsupported dependencies/platforms, select a
-    compatible substitution, retained boundary, compatibility process, or approved removal;
-    otherwise transition to `blocked`.
-11. Do not map undefined behavior as if it were a contract. Map the accepted stabilization,
-    isolation, removal, or intentional-change decision and its exception. Approved dead code
-    remains an excepted trace and gets no target unit unless decommission work needs one.
+### Step 3: Generate File-Level Mapping
 
-### Step 4: Define Coexistence and Release Seams
+For each file in inventory.md:
 
-12. Identify seams at which legacy and target can coexist and be selected independently.
-{{#if output_profile == 'service'}}
-    For this service, prefer a protocol route, facade, message consumer, worker boundary, or
-    another operationally observable selector.
-{{/if}}
-{{#if output_profile == 'library'}}
-    For this library, prefer a compatibility facade, namespaced parallel version, consumer
-    binding, or another consumer-controlled selector.
-{{/if}}
-{{#if output_profile == 'sdk'}}
-    For this SDK, prefer a compatibility layer plus representative consumer adoption and a
-    supported version-selection mechanism.
-{{/if}}
-{{#if output_profile == 'cli'}}
-    For this CLI, prefer launcher/shim selection with isolated files, streams, and exit-code
-    capture.
-{{/if}}
+```markdown
+## File Mapping
+| C++ File | Java Target | Package | Layer | Notes |
+|----------|------------|---------|-------|-------|
+| src/core/Engine.h | EnginePort.java | ...domain.port.in | domain/port | Interface (abstract methods) |
+| src/core/Engine.cpp | EngineService.java | ...domain.service | domain/service | Implementation |
+| src/db/Store.h | StorePort.java | ...domain.port.out | domain/port | Driven port interface |
+| src/db/Store.cpp | StorePersistenceAdapter.java | ...adapter.out.persistence | adapter/out | JPA implementation |
+| src/api/Handler.cpp | ItemController.java | ...adapter.in.web | adapter/in | REST controller |
+```
 
-13. For each seam, record state/data ownership, side-effect isolation, routing/selection,
-    observability, synchronization/reconciliation needs, rollback direction, and the legacy
-    decommission condition. Mirrored writes or shadow execution require explicit
-    idempotency, ordering, and side-effect controls.
-14. Construct a dependency DAG among proposed target units and seams. Cycles require a
-    deliberate boundary decision; do not hide them by assigning arbitrary implementation
-    waves.
+### Step 4: Identify Port Boundaries
 
-### Step 5: Write the Mapping View and Traceability
+Scan for classes that:
+- Are called by many other modules → likely a **driven port** (out)
+- Call into this module from outside → likely a **driving port** (in)
+- Define abstract/virtual interfaces → natural port interfaces
 
-15. Write `.migration/mapping.md` with stable IDs and at least these sections:
+**For library/sdk output_type:** Driving ports (port/in) are especially important as they define the library's PUBLIC API that consumers will call directly. These must be carefully designed, well-documented, and stable.
 
-    ```markdown
-    ## Contract Mapping
-    | Behavior IDs | Source IDs | Target ID | Target path/surface | Responsibility | Decision/Exception IDs |
+```markdown
+## Port Identification
+| C++ Interface | Port Type | Java Port | Implementations |
+|--------------|-----------|-----------|-----------------|
+| IDataStore (virtual) | Driven (out) | DataStorePort | JpaDataStoreAdapter |
+| IEventBus (virtual) | Driven (out) | EventPublisherPort | SpringEventAdapter |
+| IRequestHandler | Driving (in) | ProcessRequestUseCase | (controller calls this) |
+```
 
-    ## Target Unit Catalog
-    | Target ID | Planned path/module | Output-profile boundary | Depends on | Lifecycle/compatibility notes |
+### Step 5: Write mapping.md
 
-    ## Test Mapping
-    | Test ID | Behavior IDs | Test level | Planned location/harness | Required variants |
+Produce complete document with:
+- Namespace → package mapping
+- File → class mapping (every file)
+- Port identification (interfaces that cross boundaries)
+- Gradle module structure (if modular-hexagonal)
+- Test file mapping (C++ test → Java test location)
 
-    ## Coexistence Seams
-    | Seam ID | Selection boundary | State/side effects | Rollback direction | Decommission condition |
-    ```
+### Step 6: Validate Mapping
 
-16. Update `traceability.json` atomically:
-
-    - preserve `source_unit`, behavior, decision, exception, and characterization evidence;
-    - add stable target and planned test IDs for non-excepted links;
-    - keep link status `unmapped` until an executable slice plan owns it; and
-    - keep approved exclusions `excepted` with their exception references.
-
-17. Verify every characterized observation is assigned to a target responsibility or an
-    approved exception; every target unit has at least one source behavior or explicit new
-    intentional-change decision; target dependencies obey the selected output profile; and
-    no two mappings accidentally claim the same output path.
-18. Reconcile the mapping view against the declared scope: report required behaviors, mapped
-    target/test responsibilities, retained, removed, excepted, pending, unknown, and unmapped
-    counts with stable IDs. Planned target IDs are not actual target inventory and do not count
-    as migrated.
-19. If architecture choice, unsupported scope, or coexistence safety is unresolved,
-    transition `map -> blocked` with scoped exceptions and `resume_to: "map"`. A validator
-    or mapping-generation failure transitions to `failed` with a scoped `quality-gate`
-    exception, recovery diagnostics, and `resume_to: "map"`.
-20. Stage mapping, traceability, decisions, exceptions, and state; validate the current
-    artifact graph; then promote atomically. Structural graph validity does not prove mapping
-    or full-scope completion. On success apply `map -> plan` and recommend migrate-plan.
+- Every inventory.md file has a mapping entry
+- No two C++ files map to the same Java file (unless explicitly merged)
+- Hexagonal rules satisfied (domain has no adapter targets, etc.)
+- Port interfaces correctly identified for cross-boundary calls
 
 ## Outputs
 
-- `.migration/mapping.md` — ID-bearing contract, target-unit, test, dependency, and
-  coexistence mapping view.
-- `.migration/traceability.json` — source/behavior/evidence to target/test mapping.
-- `.migration/decisions/DEC-NNNN.json` — accepted architecture or boundary variations.
-- `.migration/exceptions/EXC-NNNN.json` — unresolved or approved scoped mapping exceptions.
-- `.migration/state.json` — validated transition to `plan`, `blocked`, or `failed`.
+- `.migration/mapping.md` — complete structural transformation map
 
 ## Success Criteria
 
-- Every non-excepted source behavior maps to stable target and planned test IDs; every
-  approved omission remains traceable to an exception and outside the migrated numerator.
-- Architecture follows the selected output profile: service, library, SDK, and CLI mappings
-  do not leak incompatible structures into one another.
-- Mapping preserves characterized lifetime, concurrency, error, numeric, serialization,
-  platform, API, side-effect, and operational contracts.
-- Dependency seams support independently releasable work, coexistence, route/selection
-  reversal, rollback, and explicit legacy decommission conditions.
-- Unsupported and unspecified behavior is decided, isolated, excepted, or blocking—never
-  silently translated.
-- All mappings use stable IDs and all JSON/cross-references validate atomically.
-- No target implementation code was generated during mapping, and successful state ends in
-  `plan`.
-- Global required, mapped, retained, removed, pending, unknown, and unmapped denominators are
-  explicit; planned target identities are never reported as actual migrated target units.
+- Every file in inventory.md has a mapping entry
+- Namespace → package mapping is complete
+- Port boundaries identified (driving and driven)
+- Hexagonal layer assignment is consistent (no domain → adapter confusion)
+- Test file mapping included
+- mapping.md written and validated

@@ -1,211 +1,196 @@
 # migrate-detect
 
-Discover the complete {{source_language}} system, its build variants, public boundaries,
-dependencies, platforms, and observable surfaces before behavior characterization begins.
+Detect C++ technologies, libraries, patterns, and platform dependencies in the source tree — produces a comprehensive technology inventory with Java migration paths.
 
 ## When to Use
 
-- Immediately after migrate-init, while `state.json.status` is `discover`.
-- With `--refresh` when the source revision or supported build matrix changes.
-- When resume validation returns to `discover` because the inventory is incomplete or stale.
+- During migrate-init (called automatically as part of initialization)
+- When new source files are discovered and the tech inventory needs updating
+- With --refresh to update legacy-stack.md after codebase changes
 
 ## Inputs
 
-- **Path to scan** (optional) — `{source_root}` from `.migration/config.json` by default.
-- **--deep flag** (optional) — inspect function-level usage, generated code, native/ABI
-  boundaries, and reachability in addition to declarations and build metadata.
-- **--refresh flag** (optional) — reconcile against the existing inventory without
-  renumbering or deleting stable source-unit IDs.
-- **Build variants** (optional) — user-declared supported configurations to supplement
-  discovered compiler, platform, feature, and dependency variants.
-
-**Required state:** `.migration/config.json`, `.migration/state.json`, and
-`.migration/scope.json`, `.migration/inventory.json`, and `.migration/target-inventory.json`
-validate, and the lifecycle state is `discover` (or a validated resume to `discover`).
+- **Path to scan** (optional) — defaults to source_root from .migration/config.json
+- **--deep flag** (optional) — also analyze function-level usage patterns (slower, more thorough)
+- **--refresh flag** (optional) — update existing legacy-stack.md rather than overwrite
 
 ## Procedure
 
-### Step 1: Establish a Reproducible Discovery Scope
+### Step 1: Build System Detection
 
-1. Structurally validate the current `.migration/` state before scanning:
+Scan project root and subdirectories for:
+- `CMakeLists.txt` → CMake (extract version, targets, find_package calls)
+- `Makefile` / `GNUmakefile` → Make (extract compiler flags, link libs)
+- `*.vcxproj` / `*.sln` → MSBuild/Visual Studio
+- `meson.build` → Meson
+- `BUILD` / `WORKSPACE` → Bazel
+- `conanfile.txt` / `conanfile.py` → Conan package manager
+- `vcpkg.json` → vcpkg package manager
+- `configure.ac` / `configure` → Autotools
 
-   ```bash
-   python3 .migration-framework/bin/migrationctl.py validate .migration
-   ```
+Record: build system name, version (if detectable), configuration mode.
 
-   Confirm the source root and selected profiles match `config.json`; read completion policy,
-   source root/snapshot, excluded-file records, boundary decision IDs, and per-source
-   dispositions from `scope.json`;
-   and read any initial product, variant, platform, consumer, or exclusion assumptions from
-   accepted decisions. Structural validity is not proof that the source census is complete.
-   Refuse bounded discovery unless every boundary decision exists, is accepted, and has durable
-   human approval; a scanner may not create its own smaller denominator.
-2. Capture the deterministic workspace snapshot from the project root:
+### Step 2: Output Type Detection
 
-   ```bash
-   python3 .migration-framework/bin/migrationctl.py snapshot .migration --project-root .
-   ```
+Determine what the C++ build produces:
 
-   Record the schema-defined source root, revision, capture time, digest, per-file paths and
-   checksums, and exception-backed excluded-file records in `scope.json.source_snapshot`.
-   Record generated-code roots, submodules, vendored sources, and supported build variants in
-   inventory and discovery research. Do not silently inspect only the developer's current
-   configuration.
-3. Enumerate every snapshot candidate in deterministic relative-path order. Treat build metadata,
-   schemas, scripts, resources, tests, and public headers/modules as discoverable units when
-   they affect behavior, packaging, or compatibility.
-4. Reconcile the source census before semantic scanning. Every snapshot file is exactly one of:
-   represented by a stable inventory unit, explicitly excluded by the scope contract with its
-   approved exception, or unresolved. An ignored, unknown, unreadable, or unclassified candidate
-   is unresolved and blocks the transition. Report the accounted numerator and declared
-   denominator; file extensions and build success may not narrow either value.
-5. On refresh, match units by retained identity and path history. Reuse the existing
-   `SRC-NNNN` ID for a renamed or moved logical unit when evidence supports the match;
-   allocate a new ID for a new unit and never renumber surviving records.
+| Build System | Library Signal | Executable Signal |
+|-------------|---------------|-------------------|
+| CMake | `add_library(SHARED|STATIC|MODULE)` | `add_executable()` |
+| Makefile | `-shared` flag, `.so`/`.dll`/`.a` target | Linked executable target |
+| MSBuild | `<ConfigurationType>DynamicLibrary|StaticLibrary</ConfigurationType>` | `<ConfigurationType>Application</ConfigurationType>` |
+| Meson | `shared_library()` / `static_library()` | `executable()` |
+| Bazel | `cc_library` | `cc_binary` |
 
-### Step 2: Detect Builds and Products
+**Classification logic:**
+- If primary target is `add_library` → likely `library` or `sdk`
+  - If public headers are installed/exported → likely `sdk`
+  - If just built as dependency → likely `library`
+- If primary target is `add_executable` with network/server code → `service`
+- If primary target is `add_executable` with arg parsing (getopt, CLI11, cxxopts) → `cli`
+- If mixed (executable + library targets) → note both, ask user during init
 
-{{> standards/sources/{{source_language_id}}/detection-rules.md#build-system-detection}}
+Record detected output type in legacy-stack.md under a '## Detected Output Type' section.
 
-6. Inventory {{source_build_systems}} declarations, package-manager metadata
-   ({{source_package_managers}}), toolchain files, compiler/linker flags, generated-source
-   steps, build presets, feature flags, and conditional targets.
-7. For each supported variant, record inputs, output products, compiler/runtime assumptions,
-   tests, dependencies, and platform. A successful default build does not prove other
-   variants are irrelevant.
+### Step 3: Package/Dependency Detection
 
-{{> standards/sources/{{source_language_id}}/detection-rules.md#output-type-detection}}
+From build files, extract declared dependencies:
+- CMake: `find_package()`, `target_link_libraries()`, `FetchContent_Declare()`
+- Conan: `[requires]` section
+- vcpkg: `"dependencies"` array
+- Makefile: `-l` flags in LDFLAGS/LIBS
 
-8. Compare detected products with the configured `output_profile`:
+For each dependency found, classify:
 
-   - `service` requires a continuously running deployable boundary;
-   - `library` requires a reusable consumer API and optional SPI;
-   - `sdk` adds a supported external developer experience and compatibility promise; and
-   - `cli` requires command, stream, exit-code, and installed-launcher contracts.
+| Category | Detection Signal |
+|----------|-----------------|
+| Networking | boost::asio, socket.h, curl, grpc++, cpp-httplib |
+| Database | mysql.h, libpq, sqlite3.h, ODBC headers, mongocxx |
+| Serialization | protobuf, nlohmann/json, rapidjson, pugixml, tinyxml2 |
+| GUI | Qt headers, wxWidgets, MFC, GTK, FLTK, ImGui |
+| Threading | \<thread\>, \<mutex\>, pthread, OpenMP, TBB |
+| Testing | gtest, catch2, doctest, boost/test, CppUnit |
+| Logging | spdlog, log4cxx, boost/log, glog, plog |
+| Crypto | openssl, libsodium, botan, crypto++ |
+| Memory | jemalloc, tcmalloc, custom pool headers |
+| IPC | ZeroMQ, shared_memory, message_queue, D-Bus |
+| Math/Science | Eigen, OpenCV, BLAS/LAPACK, FFTW, Boost.Math |
+| Compression | zlib, lz4, zstd, snappy, bzip2 |
+| Platform | Win32 API, POSIX, macOS frameworks |
 
-   Mixed products may require multiple migrations, but each detected product remains in the
-   declared denominator until an approved umbrella decision assigns it to a specific migration.
-   A scoping decision can make one migration narrower; it cannot support an unqualified claim
-   that the whole legacy project migrated. A conflict is not resolved by forcing every product
-   into the service architecture.
+### Step 4: Include Directive Analysis
 
-### Step 3: Discover Dependencies and Platform Boundaries
+Scan ALL .cpp/.h/.hpp files for #include directives:
+```bash
+grep -rh '#include' --include='*.cpp' --include='*.h' --include='*.hpp' | sort | uniq -c | sort -rn
+```
 
-{{> standards/sources/{{source_language_id}}/detection-rules.md#dependency-category-detection}}
+Classify each unique include:
+- **Standard library** (no migration needed): \<iostream\>, \<vector\>, \<algorithm\>
+- **Platform** (needs abstraction): \<windows.h\>, \<unistd.h\>, \<sys/*\>
+- **Third-party** (needs Java equivalent): "boost/*", "spdlog/*"
+- **Project-internal** (migrates with the code): "src/core/*"
 
-9. Resolve declared and observed dependencies, versions/ranges, linkage mode, licenses,
-   integrity metadata, callers, and usage locations. Distinguish project-internal,
-   language-standard, third-party, generated, native/binary, and platform dependencies.
-10. Scan all source units for `{{source_include_directive}}`, dynamic loading, FFI/ABI calls,
-   subprocesses, filesystem/network I/O, databases, serialization, environment access,
-   global state, and external side effects. Count usage by stable source-unit ID, not only
-   by textual occurrence.
-11. For every dependency, record the candidate {{target_language}} substitution, confidence,
-    semantic mismatches, coexistence option, license/security constraints, and whether a
-    compatibility process or retained native boundary may be required.
+### Step 5: C++ Standard Detection
 
-{{> standards/sources/{{source_language_id}}/detection-rules.md#platform-conditional-detection}}
+From compiler flags and code patterns:
+- `-std=c++11/14/17/20/23` in build files
+- `__cplusplus` macro checks
+- Feature usage signals:
+  - C++11: auto, nullptr, range-for, lambdas, \<thread\>
+  - C++14: generic lambdas, make_unique
+  - C++17: std::optional, structured bindings, if constexpr, \<filesystem\>
+  - C++20: concepts, ranges, co_await, \<format\>, modules
+  - C++23: std::expected, std::print, deducing this
 
-12. Record operating-system, architecture, compiler, endianness, locale, charset, time-zone,
-    filesystem, terminal, and deployment assumptions with source locations and build
-    variants. Unsupported platforms require a scoped `EXC-NNNN` proposal and named owner;
-    they are never silently dropped.
+### Step 6: Platform Conditional Detection
 
-### Step 4: Discover Semantics and Characterization Surfaces
+Scan for preprocessor platform checks:
+```
+#ifdef _WIN32 / _MSC_VER / __MINGW32__
+#ifdef __linux__ / __unix__
+#ifdef __APPLE__ / __MACH__
+#ifdef __ANDROID__
+```
 
-{{> standards/sources/{{source_language_id}}/detection-rules.md#language-version-detection}}
+For each platform block, record:
+- Location (file:line)
+- Platform(s) targeted
+- Functionality provided
+- Migration strategy: @Profile / abstraction / eliminate
 
-13. Inventory public APIs, SPIs, protocol/message schemas, command surfaces, file formats,
-    database effects, logging/metrics relied on by operators, callbacks, plugins, and
-    process lifecycle behavior appropriate to the selected output profile.
-14. Inventory source tests from {{source_test_frameworks}}, fixtures, snapshots, sample
-    clients, integration environments, benchmarks, and production-observation sources.
-    Classify each as candidate characterization evidence; do not yet claim it proves a
-    behavioral contract.
-15. Identify {{source_language}} semantic hazards, including ownership and RAII, object
-    lifetime, macros and generated code, templates/metaprogramming, concurrency and memory
-    ordering, numeric/serialization behavior, exception/error models, undefined or
-    implementation-defined behavior, platform conditionals, ABI/plugin boundaries, and
-    binary-only dependencies.
-16. Set `reachability` conservatively:
+### Step 7: Produce Output Documents
 
-    - `reachable` when a supported entry point, build target, consumer, or observed path
-      reaches the unit;
-    - `dead` only with reproducible reachability evidence across supported variants; and
-    - `unknown` when evidence is incomplete.
+**legacy-stack.md format:**
+```markdown
+# Legacy Technology Stack
 
-    Proposed omission of dead or unreachable code requires an `EXC-NNNN` record with
-    category `dead-code`, impact, mitigation, approval, and exit criteria. Unknown is not
-    dead.
+## Build System
+- **CMake 3.21** — project configuration and build
 
-### Step 5: Write and Validate Discovery Artifacts
+## C++ Standard
+- **C++17** — detected from `-std=c++17` flag and std::optional usage
 
-17. Update `.migration/inventory.json` using only fields allowed by its schema. Each unit has
-    a stable `SRC-NNNN` ID, relative path, kind, reachability, initially known behavior IDs,
-    dependency references, and risk/finding references. Preserve records that are still
-    referenced; supersede them in narrative history rather than deleting them.
-18. Update `scope.json.units` so every stable source identity has an explicit current
-    disposition, target/decision/exception references where already known, and rationale.
-    The stored `pending` disposition and audit-derived `unknown` census/inventory gaps remain
-    visible and cannot count as accounted. Retained and approved-removed items can count as
-    accounted only when the selected policy permits them; neither counts as migrated.
-19. Write ID-bearing narrative views under `.migration/research/`:
+## Detected Output Type
+- **Build produces:** <library|executable|both>
+- **Confidence:** <high|medium|low>
+- **Signals:** <what was detected>
+- **Suggested output_type:** <service|library|sdk|cli>
 
-    - `legacy-stack.md` — source revision, build variants, products, language/toolchain,
-      public surfaces, tests, platforms, and hazard findings;
-    - `dependency-map.md` — dependency, usage IDs, candidate replacement or coexistence
-      boundary, confidence, unsupported status, and required decision;
-    - `risk-matrix.md` — stable finding ID, affected `SRC` IDs, impact, likelihood,
-      detectability, mitigation, owner, and escalation threshold; and
-    - `characterization-plan.md` — public APIs and observable behaviors that must be turned
-      into `BEH-NNNN` contracts in migrate-analyze.
+## Dependencies (by category)
 
-20. Create schema-valid proposed exceptions for unsupported dependencies/platforms and
-    confirmed dead-code omissions. If an unresolved item prevents reliable
-    characterization, transition `discover -> blocked`, set `resume_to: "discover"`, and
-    reference the exception IDs in `blocked_by`. A failed scanner or validator transitions
-    to `failed` with reproducible diagnostics, rollback/retry action, and a scoped
-    `quality-gate` exception referenced by `blocked_by`; neither condition is a partial
-    success.
-21. Stage scope snapshot/dispositions, inventory, exception, research, and state changes
-    together. Validate every JSON artifact and the current full reference graph, then promote
-    atomically.
-22. Rerun `python3 .migration-framework/bin/migrationctl.py snapshot .migration --project-root
-    .` and installed structural validation against the promoted artifacts.
-    The discovery gate passes only when every deterministic candidate reconciles and the source
-    digest remains unchanged during the scan.
-23. When the source census and discovery gate are complete, apply the validated
-    `discover -> characterize` transition. Report declared candidates, inventoried, excluded,
-    pending, unknown, and accounted counts; inventory counts by kind/reachability; build
-    variants; products; public surfaces; highest risks; unresolved exception IDs; the selected
-    completion claim; and the next action: migrate-analyze.
+### Networking
+| Library | Version | Usage Count | Migration Difficulty | Java Equivalent |
+|---------|---------|-------------|---------------------|-----------------|
+| Boost.Asio | 1.82 | 23 files | 3/5 | Spring WebFlux / Virtual threads |
+
+## Platform Dependencies
+| Platform | Files | Migration Strategy |
+|----------|-------|-------------------|
+| Windows (Win32 API) | 12 | Spring profiles + abstraction |
+
+## Summary
+- Total third-party dependencies: N
+- High-risk (no direct Java equivalent): M
+- Platform-locked code: P files
+```
+
+**dependency-map.md format:**
+```markdown
+# Dependency Migration Map
+
+| C++ Library | Java Equivalent | Confidence | Notes |
+|-------------|----------------|-----------|-------|
+| Boost.Asio | java.net.http + virtual threads | High | Async I/O patterns map well |
+| spdlog | SLF4J + Logback | High | Direct equivalent |
+| nlohmann/json | Jackson (auto-configured) | High | Spring Boot default |
+| protobuf | protobuf-java + grpc-java | High | Same protocol, Java codegen |
+| OpenSSL | Java Security API + BouncyCastle | Medium | API differences |
+```
+
+**risk-matrix.md format:**
+```markdown
+# Migration Risk Matrix
+
+| Risk | Impact (1-5) | Likelihood (1-5) | Score | Mitigation |
+|------|:---:|:---:|:---:|------------|
+| Platform-specific code breaks on translation | 4 | 3 | 12 | Abstract behind ports, test with profiles |
+| Template metaprogramming hard to express in Java | 3 | 2 | 6 | Strategy pattern + generics |
+| Performance regression (GC vs manual memory) | 3 | 3 | 9 | Benchmark critical paths, tune GC |
+```
 
 ## Outputs
 
-- `.migration/scope.json` — deterministic source snapshot, denominator, and source dispositions.
-- `.migration/inventory.json` — schema-valid stable source-unit inventory.
-- `.migration/research/legacy-stack.md` — build, product, platform, test, and surface view.
-- `.migration/research/dependency-map.md` — dependency substitution/coexistence analysis.
-- `.migration/research/risk-matrix.md` — prioritized, owned discovery risks.
-- `.migration/research/characterization-plan.md` — behavior surfaces still requiring proof.
-- `.migration/exceptions/EXC-NNNN.json` — proposed scoped exclusions or unsupported items.
-- `.migration/state.json` — validated transition to `characterize`, `blocked`, or `failed`.
+- `.migration/research/legacy-stack.md` — technology inventory with migration paths
+- `.migration/research/dependency-map.md` — per-dependency migration strategy
+- `.migration/research/risk-matrix.md` — risks ranked by impact × likelihood
 
 ## Success Criteria
 
-- Every deterministic source-census candidate is inventoried with one stable `SRC-NNNN`
-  identity or appears in an approved scope exclusion; refreshes preserve existing IDs.
-- Declared, inventoried, excluded, pending, unknown, and accounted denominators reconcile
-  exactly, with zero unresolved candidates before characterization.
-- Supported build variants, products, toolchains, dependencies, native/ABI boundaries, and
-  platform conditionals are explicit.
-- Reachability is evidence-based; dead code, unsupported dependencies, and unsupported
-  platforms are neither silently omitted nor falsely accepted.
-- The selected output profile agrees with the actual delivery contract or has an explicit
-  scoping decision.
-- Every public/observable surface has a characterization task, but no untested equivalence
-  claim has been made.
-- All staged JSON and cross-references validate, and successful state ends in
-  `characterize`.
-- Discovery reports 100% accounted only under the selected policy and never reports source
-  accounting, structural validity, or a stable snapshot as 100% migrated.
+- Build system correctly identified
+- C++ standard version detected
+- All third-party dependencies cataloged with usage counts
+- Each dependency has a Java migration path (or marked "no equivalent")
+- Platform-specific code blocks identified with file locations
+- Risk matrix populated and ordered by score
+- legacy-stack.md, dependency-map.md, risk-matrix.md all written
