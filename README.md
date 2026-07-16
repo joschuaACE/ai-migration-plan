@@ -84,7 +84,6 @@ cpp-to-java-ai-framework/
 │   │   ├── archunit-templates.md
 │   │   ├── test-porting-guide.md
 │   │   ├── translation-examples.md
-│   │   ├── poc-validation-standards.md
 │   │   └── migration-agents.md
 │   ├── skills/                 ← Workflow procedures
 │   │   ├── migrate-init.md
@@ -138,7 +137,6 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 | `archunit-templates.md` | ArchUnit tests enforcing architectural boundaries |
 | `test-porting-guide.md` | gtest/catch2/doctest → JUnit 5 + AssertJ mapping |
 | `translation-examples.md` | Worked C++ → Java examples per output type |
-| `poc-validation-standards.md` | Golden master comparison methodology |
 | `migration-agents.md` | Specialized sub-agent role definitions |
 | `arc42-generation-template.md` | ARC42 section mapping from migration artifacts + Graphify graphs |
 | `datev-java-conventions.md` | DATEV-specific Java conventions extracted from reference codebases |

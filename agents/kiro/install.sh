@@ -70,13 +70,9 @@ FM_NAME[translation-examples]="translation-examples"
 FM_DESC[translation-examples]="Worked C++ to Java translation examples per output type. Use when executing translation plans, writing Java code from C++ source, or when the translator agent needs concrete before/after references."
 FM_INCLUSION[translation-examples]="auto"
 
-FM_NAME[poc-validation-standards]="poc-validation-standards"
-FM_DESC[poc-validation-standards]="PoC validation methodology — Golden Master comparison, functional equivalence criteria, ZOT variant selection. Use when running golden master tests, validating PoC criteria, or comparing C++ vs Java outputs."
-FM_INCLUSION[poc-validation-standards]="auto"
-
 DOCS_DIR="$TOOLKIT_DIR/docs/standards"
 
-for file in migration-philosophy java-target-standards java-service-profile java-library-profile java-sdk-profile java-cli-profile gradle-version-catalog archunit-templates test-porting-guide translation-examples poc-validation-standards migration-agents; do
+for file in migration-philosophy java-target-standards java-service-profile java-library-profile java-sdk-profile java-cli-profile gradle-version-catalog archunit-templates test-porting-guide translation-examples migration-agents; do
     src="$DOCS_DIR/${file}.md"
     dst="$STEERING_DIR/${file}.md"
 

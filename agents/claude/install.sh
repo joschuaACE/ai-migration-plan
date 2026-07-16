@@ -42,7 +42,6 @@ or CLI tools depending on the `output_type` configured in `.migration/config.jso
    - `docs/archunit-templates.md` — Architecture test templates
    - `docs/test-porting-guide.md` — C++ test → JUnit 5 mapping
    - `docs/translation-examples.md` — Worked translation examples
-   - `docs/poc-validation-standards.md` — Golden Master validation
    - `docs/migration-agents.md` — Sub-agent definitions
 
 ---
