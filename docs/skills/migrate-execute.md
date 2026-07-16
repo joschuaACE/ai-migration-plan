@@ -121,11 +121,42 @@ After all waves complete successfully:
 
 8. Run full project test suite one final time
 9. Check coverage report against thresholds
-10. Update state.md:
+
+### Step 4: Target Architecture Graph (Graphify)
+
+10. Run Graphify on the Java target to track architecture evolution:
+    ```bash
+    graphify {target_root}/src --update
+    ```
+    - Uses `--update` for incremental extraction (only new/changed files since last run)
+    - First run after Phase 1 does full extraction; subsequent phases are incremental
+11. Snapshot the graph for this phase:
+    ```bash
+    mkdir -p .migration/graphs/target
+    cp graphify-out/graph.json .migration/graphs/target/
+    cp graphify-out/GRAPH_REPORT.md .migration/graphs/target/
+    cp graphify-out/graph.html .migration/graphs/target/ 2>/dev/null || true
+
+    # Phase-specific snapshot for evolution tracking
+    PHASE_DIR=".migration/graphs/target-phase-$(printf '%02d' N)"
+    mkdir -p "$PHASE_DIR"
+    cp graphify-out/graph.json "$PHASE_DIR/"
+    cp graphify-out/GRAPH_REPORT.md "$PHASE_DIR/"
+    ```
+12. Quick architecture health check from graph:
+    - **New god nodes?** → If any Java node has degree > max(source god nodes), WARN
+    - **Community alignment** → Do Java communities map to hexagonal layers? (domain, application, adapter)
+    - **Cross-layer edges** → Query: any domain→adapter dependencies? These are violations
+    - Write findings to `.migration/graphs/target/evolution-phase-NN.md`
+13. If architecture violations found, append warnings to the phase summary
+
+### Step 5: State Update
+
+14. Update state.md:
     - `status: executed`
     - Increment `phases_complete` if all plans succeeded
     - Update `files_migrated` count
-11. Suggest next step: migrate-verify N
+15. Suggest next step: migrate-verify N
 
 ## Outputs
 

@@ -95,6 +95,7 @@ cpp-to-java-ai-framework/
 │   │   ├── migrate-review.md
 │   │   ├── migrate-detect.md
 │   │   ├── migrate-map.md
+│   │   ├── migrate-graphify.md
 │   │   └── migrate-resume.md
 │   └── hooks/                  ← Quality automation definitions
 │       └── migration-quality.md
@@ -139,6 +140,8 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 | `translation-examples.md` | Worked C++ → Java examples per output type |
 | `poc-validation-standards.md` | Golden master comparison methodology |
 | `migration-agents.md` | Specialized sub-agent role definitions |
+| `arc42-generation-template.md` | ARC42 section mapping from migration artifacts + Graphify graphs |
+| `datev-java-conventions.md` | DATEV-specific Java conventions extracted from reference codebases |
 | `migration-state-files.md` | `.migration/` directory structure, state.md schema, file naming convention |
 
 ---
@@ -155,6 +158,7 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 | `migrate-execute` | Execute translation with wave-based parallelism |
 | `migrate-verify` | Verify semantic equivalence (C++ vs Java) |
 | `migrate-review` | Two-pass code review — fidelity + minimalism |
+| `migrate-graphify` | Build knowledge graphs (source/target) and generate ARC42 docs |
 | `migrate-resume` | Resume after session break or context compaction |
 
 ---

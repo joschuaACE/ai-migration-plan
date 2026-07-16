@@ -25,6 +25,8 @@ Deep-analyze a C++ module for migration — traces data flow, detects patterns, 
 3. mapping.md → know target Java structure
 4. decisions.md → respect existing architectural decisions
 5. config.json → check output_type (library analysis focuses on API surface; service focuses on endpoints)
+6. `.migration/graphs/source/graph.json` → Graphify knowledge graph (god nodes, communities, edges)
+7. `.migration/graphs/source/architecture-insights.md` → pre-computed architecture insights
 
 ## Procedure
 
@@ -34,6 +36,12 @@ Deep-analyze a C++ module for migration — traces data flow, detects patterns, 
 2. Create `.migration/phases/NN-slug/` directory if not exists
 3. Verify all source files listed in the phase actually exist
 4. Update state.md: `status: analyzing`, `active_phase: N`
+5. Query Graphify source graph for this phase's files:
+   ```bash
+   graphify query "what are the key dependencies and connections for {phase_files}?"
+   ```
+   - Use the graph to pre-identify: which source nodes belong to this phase, their community membership, their edge connections to other phases
+   - Feed this context into the analysis agents below
 
 ### Step 2: Parallel Deep Analysis (4 agents)
 
@@ -61,7 +69,7 @@ Spawn 4 parallel analysis agents, each writing a section of nn-analysis.md:
 - For each pattern found, note: Location, Pattern name, How it maps to Java, Risk level (1-5)
 
 **Agent 3: Dependency Mapper**
-- Context: All source files + build files referencing this phase's targets
+- Context: All source files + build files referencing this phase's targets + `.migration/graphs/source/graph.json`
 - Analyzes:
   - Internal dependencies — what other project modules this phase calls
   - External dependencies — which third-party libraries are used
@@ -70,6 +78,8 @@ Spawn 4 parallel analysis agents, each writing a section of nn-analysis.md:
   - Circular dependencies — if any exist, flag for resolution
   - For library/sdk: Identify PUBLIC API surface — these become the exported port/in interfaces
   - For library/sdk: Identify SPI surface — extension points where consumers provide implementations (port/out)
+  - **From Graphify graph:** Cross-reference edges touching this phase's nodes — the graph's EXTRACTED edges are verified dependencies; INFERRED edges are likely dependencies to validate; AMBIGUOUS edges need manual review
+  - **From Graphify graph:** Check if this phase's files sit on a community boundary (surprising connections) — these are high-risk integration points
 - Output section: `## Dependencies & Interface Surface`
 
 **Agent 4: Risk Assessor**

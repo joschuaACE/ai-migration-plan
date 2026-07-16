@@ -173,7 +173,34 @@ Inventory entry format per file:
     - Detected technologies: [list]
     - Phases generated: Z
     - Estimated complexity: [distribution]
-22. Suggest next step: "Run migrate-analyze 1 to begin analyzing the first phase"
+
+### Phase 8: Source Architecture Graph (Graphify)
+
+22. Run Graphify on the C++ source to capture baseline architecture:
+    ```bash
+    graphify {source_root} --mode deep
+    ```
+    - Deep mode captures INFERRED relationships (critical for C++ #include chains and macros)
+    - Tree-sitter AST extraction handles .cpp/.h/.hpp natively
+23. Move graph outputs to migration-managed location:
+    ```bash
+    mkdir -p .migration/graphs/source
+    cp graphify-out/graph.json .migration/graphs/source/
+    cp graphify-out/GRAPH_REPORT.md .migration/graphs/source/
+    cp graphify-out/graph.html .migration/graphs/source/ 2>/dev/null || true
+    ```
+24. Extract architecture insights from GRAPH_REPORT.md:
+    - **God Nodes** → highest-coupled C++ components, these need careful migration
+    - **Communities** → natural module boundaries, validate against roadmap phase grouping
+    - **Surprising Connections** → hidden coupling that could break during migration
+25. Cross-reference graphify communities against roadmap.md phases:
+    - If a community spans multiple phases → WARN: tight coupling across phase boundary
+    - If a phase spans multiple communities → INFO: phase may be larger than needed
+    - Write alignment report to `.migration/graphs/source/phase-alignment.md`
+    - If significant misalignment, suggest roadmap adjustments to user
+26. Write `.migration/graphs/source/architecture-insights.md` summarizing god nodes, communities, and surprising connections
+27. Commit: `migrate(init): add source architecture graph`
+28. Suggest next step: "Run migrate-analyze 1 to begin analyzing the first phase"
     - If --poc mode: also suggest "Run migrate-golden-master to validate functional equivalence"
 
 ## Outputs
@@ -190,6 +217,11 @@ Inventory entry format per file:
 - `.migration/research/risk-matrix.md` — migration risks
 - `.migration/research/dependency-map.md` — library migration paths
 - `{target_root}` — target project skeleton (build.gradle.kts, Gradle wrapper, hexagonal package structure, ArchUnit test)
+- `.migration/graphs/source/graph.json` — Graphify knowledge graph of C++ source
+- `.migration/graphs/source/graph.html` — Interactive graph visualization
+- `.migration/graphs/source/GRAPH_REPORT.md` — God nodes, communities, surprising connections
+- `.migration/graphs/source/architecture-insights.md` — Migration-relevant architecture insights
+- `.migration/graphs/source/phase-alignment.md` — Graphify communities vs roadmap phase alignment
 - If --poc: `.migration/validation/poc-config.json` and `.migration/validation/test-variants.md`
 
 ## Success Criteria

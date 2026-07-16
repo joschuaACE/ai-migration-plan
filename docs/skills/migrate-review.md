@@ -102,6 +102,32 @@ Combine both passes into a review document:
 2. Update state.md: `status: completed` for this phase
 3. Update progress metrics
 4. Report: phase done, suggest migrate-analyze N+1 for next phase
+5. **If this is the LAST phase** (all phases in roadmap.md are now `completed`):
+   - Run final full target graph build:
+     ```bash
+     graphify {target_root}/src --mode deep
+     ```
+   - Run source↔target comparison:
+     ```bash
+     graphify query "compare overall architecture coverage between source and target"
+     ```
+   - Generate ARC42 documentation (invoke migrate-graphify arc42):
+     - Read ALL migration artifacts (graphs, decisions, mapping, tech-debt, phase analyses)
+     - Generate all 12 ARC42 sections to `.migration/arc42/`
+     - Use `arc42-generation-template.md` as the structural guide
+     - Write in German (DATEV convention)
+   - Copy ARC42 docs into target project:
+     ```bash
+     cp -r .migration/arc42/ {target_root}/docs/arc42/
+     ```
+   - Copy final graph visualization into target project:
+     ```bash
+     mkdir -p {target_root}/docs/architecture
+     cp .migration/graphs/target/graph.html {target_root}/docs/architecture/
+     cp .migration/graphs/target/GRAPH_REPORT.md {target_root}/docs/architecture/
+     ```
+   - Commit: `docs(arc42): generate architecture documentation from migration`
+   - Report: "Migration complete. ARC42 documentation generated. Open {target_root}/docs/arc42/arc42-documentation.md"
 
 **If NEEDS_FIXES:**
 1. If `--fix` flag: auto-apply non-risky fixes (OVER_ENGINEERED, UNNECESSARY)
@@ -119,6 +145,11 @@ Combine both passes into a review document:
 - Review verdict in console output
 - Git tag: `migrate-phase-N-complete` (if approved)
 - state.md updated with completion status and progress metrics
+- If final phase:
+  - `.migration/arc42/` — Full ARC42 documentation (12 sections)
+  - `.migration/graphs/target/` — Final target architecture graph
+  - `{target_root}/docs/arc42/` — ARC42 docs in target project
+  - `{target_root}/docs/architecture/graph.html` — Interactive architecture visualization
 
 ## Success Criteria
 
