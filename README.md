@@ -86,6 +86,7 @@ cpp-to-java-ai-framework/
 │   │   ├── translation-examples.md
 │   │   └── migration-agents.md
 │   ├── skills/                 ← Workflow procedures
+│   │   ├── migrate-understand.md
 │   │   ├── migrate-init.md
 │   │   ├── migrate-analyze.md
 │   │   ├── migrate-plan.md
@@ -148,6 +149,7 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 
 | Command | Purpose |
 |---------|---------|
+| `migrate-understand` | Run Understand-Anything + Graphify to comprehend the source before migrating |
 | `migrate-init` | Scan source, detect tech, generate roadmap and project skeleton |
 | `migrate-detect` | Detect C++ technologies, libraries, platform dependencies |
 | `migrate-map` | Map C++ namespaces to Java packages |
