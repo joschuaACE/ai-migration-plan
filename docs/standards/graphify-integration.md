@@ -1,6 +1,10 @@
-# migrate-graphify
+# Graphify Integration Reference
 
-Instrument Graphify knowledge graph extraction at key points during migration — building an architectural understanding of both the C++ source and the evolving Java target — and generate ARC42 documentation from the accumulated knowledge.
+Internal reference for Graphify knowledge graph extraction during migration. This is NOT
+a user-invoked command — it runs automatically at defined points in the migration workflow.
+
+Other skills call into Graphify modes implicitly; this document defines what happens
+at each integration point.
 
 ## Prerequisites
 
@@ -28,19 +32,19 @@ Requires Python 3.10+. The `graphify` CLI must be on PATH.
 
 **Output format:** `graphify-out/` directory with `graph.json`, `graph.html`, `GRAPH_REPORT.md`
 
-## When to Use
+---
 
-- **After migrate-init** — graphify the C++ source to capture baseline architecture
-- **After migrate-execute (per phase)** — graphify the Java target to track architecture evolution
-- **After all phases complete** — generate ARC42 documentation from accumulated knowledge
-- **During migrate-verify** — use graph to validate architectural conformance
-- **Anytime** — query the graph to answer architecture questions about source or target
+## When This Runs Automatically
 
-## Inputs
+| Mode | Triggered By | When |
+|------|-------------|------|
+| `source` | **migrate-init** Phase 1 (Scan + Understand) | Automatically after source scanning completes |
+| `target` | **migrate-execute** | Automatically at end of execution (after all waves pass) |
+| `compare` | **migrate-verify** | Automatically at end of verification |
+| `arc42` | **migrate-review** (final phase only) | Automatically after final review completes |
+| `query` | Any skill (inline) | Available as an inline capability during any skill — not a separate command |
 
-- **Mode** (required): `source`, `target`, `arc42`, `compare`, `query <question>`
-- **--phase N** (optional): scope to a specific migration phase
-- **--incremental** (optional): only re-extract changed files (uses `graphify --update`)
+---
 
 ## Outputs Location
 
@@ -76,13 +80,15 @@ Requires Python 3.10+. The `graphify` CLI must be on PATH.
     └── 12-glossary.md
 ```
 
+---
+
 ## Procedure
 
 ---
 
 ### Mode: `source` — Graphify the C++ Source
 
-**When:** Immediately after migrate-init completes (Phase 7, step 21).
+**Trigger:** migrate-init Phase 1 (Scan + Understand) — runs automatically after source scanning completes.
 
 1. Read `.migration/config.json` → get `source_root`
 2. Run Graphify on the C++ source directory:
@@ -127,7 +133,7 @@ Requires Python 3.10+. The `graphify` CLI must be on PATH.
 
 ### Mode: `target` — Graphify the Java Target
 
-**When:** After each migrate-execute N completes (all waves pass gates).
+**Trigger:** migrate-execute — runs automatically after all waves pass gates.
 
 1. Read `.migration/config.json` → get `target_root` (default `app/`)
 2. Read `.migration/state.md` → get `active_phase`
@@ -176,7 +182,7 @@ Requires Python 3.10+. The `graphify` CLI must be on PATH.
 
 ### Mode: `compare` — Source ↔ Target Architecture Comparison
 
-**When:** After any target graphify, or on-demand.
+**Trigger:** migrate-verify — runs automatically at end of verification.
 
 1. Load `.migration/graphs/source/graph.json`
 2. Load `.migration/graphs/target/graph.json`
@@ -217,7 +223,7 @@ Requires Python 3.10+. The `graphify` CLI must be on PATH.
 
 ### Mode: `arc42` — Generate ARC42 Documentation
 
-**When:** After all migration phases complete, or on-demand for current state.
+**Trigger:** migrate-review (final phase only) — runs automatically after final review completes.
 
 #### Prerequisites
 - `.migration/graphs/source/graph.json` exists
@@ -266,7 +272,7 @@ Requires Python 3.10+. The `graphify` CLI must be on PATH.
 
 ### Mode: `query <question>` — Query Architecture Graph
 
-**When:** Anytime during migration.
+**Availability:** Inline capability during any skill — not a separate command.
 
 1. Determine which graph to query:
    - If question mentions C++/source/original → use `.migration/graphs/source/graph.json`
@@ -281,57 +287,7 @@ Requires Python 3.10+. The `graphify` CLI must be on PATH.
 
 ---
 
-## Integration Points in Existing Skills
-
-### migrate-init (add at end of Phase 7)
-
-After step 21 (display summary), add:
-
-```
-22. Run migrate-graphify source to capture C++ architecture baseline
-23. Cross-reference graphify communities against generated roadmap phases
-24. If misalignment detected, suggest roadmap adjustments to user
-```
-
-### migrate-execute (add after post-wave gates)
-
-After all waves pass in Step 2c:
-
-```
-After final wave gates pass:
-- Run migrate-graphify target --phase N
-- Check for architecture violations in generated code
-- If violations found, add to phase summary as warnings
-```
-
-### migrate-verify (add as Stage 3)
-
-After Stage 2 (Architecture Quality):
-
-```
-Stage 3: Graph-Based Architecture Verification
-- Run migrate-graphify compare
-- Verify: no target god nodes exceed source god nodes in degree
-- Verify: target communities align with hexagonal layers
-- Verify: no domain→adapter edges in target graph
-- Verify: coverage % matches expected (files migrated / total files)
-- Write findings to verify report
-```
-
-### migrate-review (final step)
-
-After review is complete for last phase:
-
-```
-Final Step: Generate ARC42
-- Run migrate-graphify arc42
-- Present generated documentation to user for review
-- Commit arc42 docs to target project
-```
-
----
-
-## Success Criteria
+## Expected Outcomes
 
 - Source graph captures ALL C++ modules as nodes with relationships
 - Target graph grows incrementally with each phase
@@ -341,4 +297,4 @@ Final Step: Generate ARC42
 - ARC42 sections reference concrete graph data (node counts, communities, etc.)
 - God node warnings surface BEFORE they become entrenched
 - Community alignment validates roadmap phase boundaries
-- Query mode allows ad-hoc architecture questions during migration
+- Query mode allows ad-hoc architecture questions during any skill execution

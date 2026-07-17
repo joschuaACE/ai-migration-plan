@@ -46,6 +46,7 @@ agents/            ← Agent-specific installers + shared hook compiler
 
 ### Skills (docs/skills/*.md)
 - One file per workflow command (migrate-init, migrate-analyze, etc.)
+- migrate-init includes source understanding (UA + Graphify) — there is no separate understand step.
 - Format: heading, description, When to Use, Inputs, Procedure, Outputs, Success Criteria.
 - Write steps as numbered instructions any LLM can follow.
 - Never use slash-command syntax or agent-specific invocation patterns.

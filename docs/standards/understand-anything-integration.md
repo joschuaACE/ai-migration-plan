@@ -100,12 +100,12 @@ Users need to **understand** before they **migrate**.
 
 ---
 
-## Proposed New Skill: `migrate-understand`
+## Implementation: Built into `migrate-init` Phase 1
 
-**Position in workflow:** BEFORE `migrate-init`. This is Phase 0.
+**Position in workflow:** Phase 1 of `migrate-init` (Scan + Understand). There is no separate understand step.
 
 ```
-migrate-understand → migrate-init → migrate-analyze → ... → migrate-review
+migrate-init (Phase 1: Scan + Understand) → migrate-analyze → ... → migrate-review
 ```
 
 ### What it does:
@@ -231,7 +231,7 @@ graphify --version          # Should print version
 
 ```
 # Step 0: Understand what you're migrating
-migrate-understand ./source/cpp-project
+migrate-init ./source/cpp-project   # Phase 1 runs UA + Graphify automatically
 
 # This runs both tools and produces:
 # - Interactive dashboard (open in browser)

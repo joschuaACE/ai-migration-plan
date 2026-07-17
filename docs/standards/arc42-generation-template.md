@@ -1,13 +1,13 @@
 # ARC42 Generation Template
 
 > Maps migration artifacts + Graphify knowledge graphs → ARC42 v9.0 sections.
-> Used by `migrate-graphify arc42`.
+> Used by the `arc42` mode (see graphify-integration.md).
 ---
 
 ## How This Works
 
 The migration workflow accumulates artifacts throughout its lifecycle. When all phases
-are complete (or on-demand), `migrate-graphify arc42` reads these artifacts and populates
+are complete (or on-demand), the `arc42` mode of Graphify integration reads these artifacts and populates
 the ARC42 template below. Each section documents WHERE to source the content from.
 
 **Output:** `.migration/arc42/arc42-documentation.md` (single file, matching official template structure)
@@ -62,7 +62,7 @@ Fixed quality goals for migrated systems (customize if decisions.md overrides):
 **Data Sources:**
 - `config.json` → `java_version`, `spring_boot_version`, `output_type`, `architecture`
 - `decisions.md` → technology constraint decisions
-- `datev-java-conventions.md` → mandatory organizational patterns
+- `java-target-standards.md` → mandatory architectural and organizational patterns
 
 **Generate table:**
 
@@ -72,7 +72,7 @@ Fixed quality goals for migrated systems (customize if decisions.md overrides):
 | {Framework} | Spring Boot 4.x / plain library / picocli | config.json output_type |
 | {Architecture} | Hexagonal / 4-layer DATEV | config.json |
 | Gradle Kotlin DSL | Build system | Framework standard |
-| DATEV conventions | Package structure, DbAdapter, MapStruct, etc. | datev-java-conventions.md |
+| DATEV conventions | Package structure, DbAdapter, MapStruct, etc. | java-target-standards.md |
 | CI/CD | Jenkins + DATEV-CI | Organizational |
 | Security | rrmo-security-component | DATEV standard |
 | Logging | Splunk-compatible, VK3 masking | DATEV standard |
@@ -118,7 +118,7 @@ Generate from the target graph adapter/out nodes:
 - `decisions.md` → all architecture decisions
 - `mapping.md` → C++ to Java translation strategy
 - `tech-debt.md` → intentional redesign decisions (not 1:1 ports)
-- `datev-java-conventions.md` → pattern choices
+- `java-target-standards.md` → pattern choices
 
 **Generate:**
 - Technology decisions table (from decisions.md)
@@ -267,7 +267,7 @@ Only generate if multi-service deployment or complex infrastructure:
 
 **Data Sources:**
 - Target graph → surprising connections (cross-community edges indicate shared concepts)
-- `datev-java-conventions.md` → standard patterns applied
+- `java-target-standards.md` → standard patterns applied
 - Phase analysis files → shared patterns identified across phases
 - Source graph → infrastructure nodes shared by multiple communities
 
@@ -275,14 +275,14 @@ Only generate if multi-service deployment or complex infrastructure:
 
 | Concept | Data Source | Content |
 |---------|-------------|---------|
-| Security | datev-java-conventions §11 + decisions.md | @RvoSecurity, FKT users, OAuth2/Basic Auth |
-| Logging & Monitoring | datev-java-conventions §9 | @Slf4j, Splunk markers, VK3 masking, MDC |
-| Error Handling | datev-java-conventions §7 | Rvo*Exception hierarchy, ErrorDto, @ControllerAdvice |
-| Persistence | datev-java-conventions §5 | DbAdapter pattern, JPA conventions, MongoDB patterns |
-| Object Mapping | datev-java-conventions §6 | MapStruct, unmappedTargetPolicy=ERROR, 3-layer chain |
-| Testing Strategy | datev-java-conventions §10 | JUnit 5 + Cucumber(DE) + ArchUnit + WireMock |
-| External Communication | datev-java-conventions §13 | Feign clients, adapter pattern, request-scoped cache |
-| Configuration | datev-java-conventions §8 | Profile strategy, VCAP services, @ConfigurationProperties |
+| Security | java-target-standards §4 + decisions.md | @RvoSecurity, FKT users, OAuth2/Basic Auth |
+| Logging & Monitoring | java-target-standards §9 | @Slf4j, Splunk markers, VK3 masking, MDC |
+| Error Handling | java-target-standards §7 | Rvo*Exception hierarchy, ErrorDto, @ControllerAdvice |
+| Persistence | java-target-standards §5 | DbAdapter pattern, JPA conventions, MongoDB patterns |
+| Object Mapping | java-target-standards §6 | MapStruct, unmappedTargetPolicy=ERROR, 3-layer chain |
+| Testing Strategy | java-target-standards §10 | JUnit 5 + Cucumber(DE) + ArchUnit + WireMock |
+| External Communication | java-target-standards §8 | Feign clients, adapter pattern, request-scoped cache |
+| Configuration | java-target-standards §9 | Profile strategy, VCAP services, @ConfigurationProperties |
 
 ---
 

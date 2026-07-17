@@ -111,7 +111,7 @@ Combine both passes into a review document:
      ```bash
      graphify query "compare overall architecture coverage between source and target"
      ```
-   - Generate ARC42 documentation (invoke migrate-graphify arc42):
+   - Generate ARC42 documentation (graphify `arc42` mode — see graphify-integration.md):
      - Read ALL migration artifacts (graphs, decisions, mapping, tech-debt, phase analyses)
      - Generate all 12 ARC42 sections to `.migration/arc42/`
      - Use `arc42-generation-template.md` as the structural guide

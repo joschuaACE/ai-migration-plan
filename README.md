@@ -84,9 +84,9 @@ cpp-to-java-ai-framework/
 │   │   ├── archunit-templates.md
 │   │   ├── test-porting-guide.md
 │   │   ├── translation-examples.md
-│   │   └── migration-agents.md
+│   │   ├── migration-agents.md
+│   │   └── graphify-integration.md
 │   ├── skills/                 ← Workflow procedures
-│   │   ├── migrate-understand.md
 │   │   ├── migrate-init.md
 │   │   ├── migrate-analyze.md
 │   │   ├── migrate-plan.md
@@ -95,7 +95,6 @@ cpp-to-java-ai-framework/
 │   │   ├── migrate-review.md
 │   │   ├── migrate-detect.md
 │   │   ├── migrate-map.md
-│   │   ├── migrate-graphify.md
 │   │   └── migrate-resume.md
 │   └── hooks/                  ← Quality automation definitions
 │       └── migration-quality.md
@@ -129,7 +128,7 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 | Document | Purpose |
 |----------|---------|
 | `migration-philosophy.md` | Iron laws, the migration ladder, behavioral equivalence |
-| `java-target-standards.md` | Java 25 features, architecture rules, code quality |
+| `java-target-standards.md` | Java 25 features, DATEV architecture rules, code patterns, testing |
 | `java-service-profile.md` | Spring Boot 4.x service — hexagonal, observability, security |
 | `java-library-profile.md` | Plain JAR — api/internal/spi, module-info.java, zero framework lock-in |
 | `java-sdk-profile.md` | SDK — Javadoc, @Stable/@Beta/@Internal, binary compatibility, samples |
@@ -140,7 +139,7 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 | `translation-examples.md` | Worked C++ → Java examples per output type |
 | `migration-agents.md` | Specialized sub-agent role definitions |
 | `arc42-generation-template.md` | ARC42 section mapping from migration artifacts + Graphify graphs |
-| `datev-java-conventions.md` | DATEV-specific Java conventions extracted from reference codebases |
+| `graphify-integration.md` | Internal reference for Graphify automation triggers across skills |
 | `migration-state-files.md` | `.migration/` directory structure, state.md schema, file naming convention |
 
 ---
@@ -149,8 +148,7 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 
 | Command | Purpose |
 |---------|---------|
-| `migrate-understand` | Run Understand-Anything + Graphify to comprehend the source before migrating |
-| `migrate-init` | Scan source, detect tech, generate roadmap and project skeleton |
+| `migrate-init` | Scan source, understand architecture (UA + Graphify), detect tech, generate roadmap and project skeleton |
 | `migrate-detect` | Detect C++ technologies, libraries, platform dependencies |
 | `migrate-map` | Map C++ namespaces to Java packages |
 | `migrate-analyze` | Deep-analyze a phase — data flow, patterns, risks |
@@ -158,7 +156,6 @@ agents/*/install.sh      ← Thin adapters: format docs/ for each agent's conven
 | `migrate-execute` | Execute translation with wave-based parallelism |
 | `migrate-verify` | Verify semantic equivalence (C++ vs Java) |
 | `migrate-review` | Two-pass code review — fidelity + minimalism |
-| `migrate-graphify` | Build knowledge graphs (source/target) and generate ARC42 docs |
 | `migrate-resume` | Resume after session break or context compaction |
 
 ---
