@@ -11,7 +11,6 @@ After migrate-plan N is confirmed by the user. This is the third step in the pha
 - **Phase number** (required) — which phase to execute
 - **--wave N** (optional) — execute only wave N (for pacing, retry, or granular control)
 - **--interactive** (optional) — one plan at a time, no parallel agents, user checkpoints between plans
-- **--dry-run** (optional) — show what would be executed without writing files
 
 **Required state:**
 - Plans exist: `.migration/phases/NN-slug/nn-pp-plan.md`

@@ -112,7 +112,7 @@ if [ -d "$SKILLS_DOCS" ]; then
     SK_HINT[migrate-detect]='[path] [--deep] [--refresh]'
     SK_HINT[migrate-analyze]='<phase-number> [--focus memory|concurrency|io|api|all]'
     SK_HINT[migrate-plan]='<phase-number> [--strategy conservative|modern|hybrid]'
-    SK_HINT[migrate-execute]='<phase-number> [--wave N] [--interactive] [--dry-run]'
+    SK_HINT[migrate-execute]='<phase-number> [--wave N] [--interactive]'
     SK_HINT[migrate-verify]='<phase-number> [--deep] [--report-only]'
     SK_HINT[migrate-review]='<phase-number> [--scope diff|full] [--fix]'
     SK_HINT[migrate-map]='[--refresh] [--style hexagonal|modular-hexagonal]'
