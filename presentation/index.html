@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATEV Legacy Modernization — AI-Assisted Migration Framework</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Light premium palette — Apple marketing page inspired */
+  --accent: #0071E3;           /* Apple link blue — action, confidence */
+  --accent-glow: rgba(0,113,227,0.15);
+  --accent-light: #147CE5;
+  --purple: #7D5FFF;           /* Soft violet — innovation, premium */
+  --purple-glow: rgba(125,95,255,0.12);
+  --green: #28A745;            /* Confident green — success */
+  --green-glow: rgba(40,167,69,0.12);
+  --orange: #F5A623;           /* Warm amber — attention */
+  --warn: #D63031;             /* Refined red — legacy/danger */
+  --cyan: #5DADE2;             /* Soft sky blue — fresh, secondary */
+
+  /* Surfaces — light and airy */
+  --surface: rgba(0,0,0,0.02);
+  --surface-border: rgba(0,0,0,0.08);
+  --glass: rgba(255,255,255,0.8);
+  --glass-border: rgba(0,0,0,0.06);
+
+  /* Text hierarchy */
+  --text-primary: #1D1D1F;     /* Apple's near-black */
+  --text-secondary: #6E6E73;   /* Apple's secondary */
+  --text-muted: #AEAEB2;
+
+  /* Backgrounds */
+  --bg-deep: #FFFFFF;          /* Pure white */
+  --bg-card: #F5F5F7;          /* Apple's signature light gray */
+  --bg-elevated: #FFFFFF;
+}
+
+/* === BASE === */
+.reveal {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+.reveal h1, .reveal h2, .reveal h3 {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+.reveal h1 { font-size: 3.4em; line-height: 1.08; font-weight: 800; }
+.reveal h2 { font-size: 2.2em; color: var(--text-primary); line-height: 1.2; }
+.reveal h3 { font-size: 1.4em; color: var(--accent); }
+.reveal code, .reveal pre { font-family: 'JetBrains Mono', 'SF Mono', monospace; }
+.reveal .slide-number { font-family: 'JetBrains Mono', monospace; font-size: 0.6em; opacity: 0.3; color: var(--text-muted); }
+.reveal .progress span { background: var(--accent); }
+
+/* === ANIMATED GRADIENT — vibrant on white === */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent), var(--purple), #E040FB, var(--accent));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* === GLOW EFFECTS (subtle on light) === */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 4px 20px var(--accent-glow); }
+  50% { box-shadow: 0 8px 40px rgba(0,113,227,0.2); }
+}
+.glow-box {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* === GLASSMORPHISM CARDS (light) === */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+/* === METRIC GRID === */
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin: 2rem 0; }
+.metric-box {
+  background: var(--bg-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 20px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.metric-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
+  border-radius: 20px 20px 0 0;
+}
+.metric-box .number {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 3em;
+  font-weight: 800;
+  color: var(--accent);
+  display: block;
+  line-height: 1;
+}
+.metric-box .label {
+  font-size: 0.75em;
+  color: var(--text-secondary);
+  margin-top: 0.8rem;
+  letter-spacing: 0.01em;
+}
+
+/* === COMPARISON LAYOUT === */
+.comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin: 1.5rem 0; }
+.comparison .col {
+  background: var(--bg-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 1.2rem;
+  text-align: left;
+}
+.comparison .col h4 {
+  margin: 0 0 0.8rem 0;
+  font-size: 0.85em;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.comparison .col.before { border-color: rgba(214,48,49,0.2); background: rgba(214,48,49,0.02); }
+.comparison .col.before h4 { color: var(--warn); }
+.comparison .col.after { border-color: rgba(40,167,69,0.2); background: rgba(40,167,69,0.02); }
+.comparison .col.after h4 { color: var(--green); }
+.comparison pre { font-size: 0.42em !important; margin: 0 !important; border-radius: 10px; }
+
+/* === FRAMEWORK FLOW === */
+.framework-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+.framework-step {
+  background: var(--bg-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 1.2rem;
+  text-align: center;
+  position: relative;
+}
+.framework-step .step-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2em;
+  font-weight: 800;
+  color: var(--accent);
+}
+.framework-step .step-title { font-size: 0.85em; font-weight: 600; margin-top: 0.3rem; color: var(--text-primary); }
+.framework-step .step-desc { font-size: 0.6em; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4; }
+
+/* === TABLE === */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.65em; margin: 1rem 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--surface-border); }
+.data-table th {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0.8rem;
+  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
+  text-align: left;
+  border-bottom: 1px solid var(--surface-border);
+}
+.data-table td {
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid var(--surface-border);
+  color: var(--text-primary);
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(0,113,227,0.03); }
+
+/* === PILLS === */
+.pill {
+  display: inline-block;
+  background: var(--green);
+  color: white;
+  padding: 0.25em 0.9em;
+  border-radius: 20px;
+  font-size: 0.65em;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.pill.blue { background: var(--accent); color: white; }
+.pill.purple { background: var(--purple); color: white; }
+.pill.red { background: var(--warn); color: white; }
+.pill.orange { background: var(--orange); color: white; }
+
+/* === MISC === */
+.subtitle {
+  font-size: 0.65em;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  font-weight: 400;
+}
+.accent { color: var(--accent); }
+.cyan { color: var(--cyan); }
+
+blockquote {
+  border-left: 3px solid var(--accent) !important;
+  background: rgba(0,113,227,0.04) !important;
+  padding: 1.2rem 1.5rem !important;
+  font-style: normal !important;
+  font-size: 0.85em;
+  border-radius: 0 12px 12px 0;
+  color: var(--text-secondary);
+}
+
+.terminal-block {
+  background: #1D1D1F;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 14px;
+  padding: 1.4rem 1.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6em;
+  text-align: left;
+  color: #A0A0A5;
+  line-height: 1.9;
+}
+.terminal-block .prompt { color: #5AC8FA; }
+.terminal-block .output { color: #30D158; }
+
+.highlight-green { color: var(--green); font-weight: 600; }
+.highlight-red { color: var(--warn); font-weight: 600; }
+
+/* === ANIMATED ORB BACKGROUND (subtle on light) === */
+.orb-bg { position: relative; overflow: hidden; }
+.orb-bg::before, .orb-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  z-index: 0;
+}
+.orb-bg::before {
+  width: 500px; height: 500px;
+  background: var(--accent);
+  top: -150px; right: -150px;
+  animation: float-orb 10s ease-in-out infinite;
+}
+.orb-bg::after {
+  width: 400px; height: 400px;
+  background: var(--purple);
+  bottom: -120px; left: -120px;
+  animation: float-orb 12s ease-in-out infinite reverse;
+}
+@keyframes float-orb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.08); }
+  66% { transform: translate(-30px, 20px) scale(0.92); }
+}
+.orb-bg > * { position: relative; z-index: 1; }
+
+/* Arch diagram */
+.arch-diagram {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5em;
+  text-align: left;
+  background: #1D1D1F;
+  color: #A0A0A5;
+  border: none;
+  padding: 1.2rem;
+  border-radius: 14px;
+  line-height: 1.5;
+}
+
+/* List styling */
+.reveal ul { list-style: none; padding-left: 0; }
+.reveal ul li { position: relative; padding-left: 1.2em; margin: 0.6rem 0; }
+.reveal ul li::before { content: '›'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- SLIDE 1: TITLE -->
+<section class="orb-bg" data-background-color="#FFFFFF">
+<h1 style="margin-bottom: 0.3em;">Your Legacy.<br><span class="gradient-text">Modernized.</span><br>Proven.</h1>
+<p style="font-size: 0.7em; color: var(--text-secondary); margin-top: 1.5rem; font-weight: 300;">AI-Assisted C++ → Java 25 Migration Framework</p>
+<div style="margin-top: 3rem; display: flex; justify-content: center; gap: 2rem; font-size: 0.55em; color: var(--text-secondary);">
+<span>38,854 LOC migrated</span>
+<span style="color: var(--accent);">•</span>
+<span>7 phases complete</span>
+<span style="color: var(--accent);">•</span>
+<span>146 tests passing</span>
+</div>
+</section>
+
+<!-- SLIDE 2: THE CHALLENGE -->
+<section data-background-color="#FFFFFF">
+<h2>The Challenge</h2>
+<p class="subtitle">Why legacy C++ is a strategic risk for DATEV</p>
+<div style="text-align: left; margin-top: 2rem; font-size: 0.8em;">
+<ul>
+<li class="fragment"><span class="highlight-red">Talent scarcity</span> — C++/MFC developers retiring, not being replaced</li>
+<li class="fragment"><span class="highlight-red">Regulatory pressure</span> — audit compliance demands modern tooling and traceability</li>
+<li class="fragment"><span class="highlight-red">Innovation blocked</span> — can't adopt cloud, containers, or modern CI/CD pipelines</li>
+<li class="fragment"><span class="highlight-red">Cost compounding</span> — maintenance cost rises every year as fewer developers can work on it</li>
+</ul>
+</div>
+<div class="fragment" style="margin-top: 2.5rem;">
+<blockquote>"Manual migration at this scale takes years, ties up your best people, and still offers no guarantee of behavioral equivalence."</blockquote>
+</div>
+</section>
+
+<!-- SLIDE 3: THE PROOF -->
+<section data-background-color="#FFFFFF">
+<h2>The Proof</h2>
+<p class="subtitle">DvBilaAufbKern — Balance Sheet Processing Core — fully migrated</p>
+<div class="metric-grid">
+<div class="metric-box glow-box">
+<span class="number">38,854</span>
+<span class="label">Lines of C++ → Java 25</span>
+</div>
+<div class="metric-box">
+<span class="number">121</span>
+<span class="label">Java Classes Generated</span>
+</div>
+<div class="metric-box">
+<span class="number">146</span>
+<span class="label">Tests Passing ✓</span>
+</div>
+</div>
+<div class="metric-grid" style="margin-top: 0.5rem;">
+<div class="metric-box">
+<span class="number">7</span>
+<span class="label">Migration Phases</span>
+</div>
+<div class="metric-box">
+<span class="number">100%</span>
+<span class="label">Source File Coverage</span>
+</div>
+<div class="metric-box">
+<span class="number">0</span>
+<span class="label">Compilation Errors</span>
+</div>
+</div>
+</section>
+
+<!-- LIVE DEMO CUE -->
+<section data-background-color="#FFFFFF">
+<h2 style="color: var(--accent);">Let's look at the code</h2>
+<div class="terminal-block" style="margin-top: 2rem;">
+<p><span class="prompt">$</span> git log --oneline migrate-phase-1-complete..migration-complete</p>
+<p><span class="prompt">$</span> git tag -l</p>
+<p><span class="prompt">$</span> ls source/DvBilaAufbKern/</p>
+<p><span class="prompt">$</span> cat .migration/roadmap.md</p>
+</div>
+<p style="font-size: 0.6em; color: var(--text-muted); margin-top: 2.5rem;">→ Switch to terminal + IDE</p>
+</section>
+
+
+<!-- SLIDE 5: ARCHITECTURE TRANSFORMATION -->
+<section data-background-color="#FFFFFF">
+<h2>Not a Translation — <span class="accent">A Transformation</span></h2>
+<p class="subtitle">From monolithic C++ static lib to modern hexagonal Java 25 library</p>
+<div class="comparison">
+<div class="col before">
+<h4>C++ Legacy</h4>
+<pre><code>DvBilaAufbKern003.lib
+├── 51 files (flat directory)
+├── God class: CBaKAuswBasis (4,079 LOC)
+├── Raw pointers, manual memory
+├── Global state (KeineUmrechnung)
+├── operator bool() overloads
+├── Visual SourceSafe / MSVC
+├── No tests
+└── Windows-only (LPCTSTR, TCHAR)</code></pre>
+</div>
+<div class="col after">
+<h4>Java 25 Modern</h4>
+<pre><code>com.datev.bilanz.dvbilaaufbkern
+├── api/     → Public contracts (4 files)
+├── spi/     → Extension points (10 interfaces)
+├── internal/→ Encapsulated impl (107 files)
+│   ├── basis/     (decomposed AuswBasis)
+│   ├── haupt/     (main evaluations)
+│   ├── ktonachweis/ (account proofs)
+│   └── 14 more packages...
+├── module-info.java (hard API boundary)
+├── ArchUnit tests (architecture enforced)
+├── 146 unit tests (all passing)
+└── Platform-independent JAR</code></pre>
+</div>
+</div>
+</section>
+
+<!-- SLIDE 6: BEFORE/AFTER CODE -->
+<section data-background-color="#FFFFFF">
+<h2>Before & After</h2>
+<p class="subtitle">CBaKAlternativ — same business semantics, modern idioms</p>
+<div class="comparison">
+<div class="col before">
+<h4>C++ — Alternativ.cpp</h4>
+<pre><code class="language-cpp">// Global mutable state
+CBaKAlternativ KeineUmrechnung(
+    CBaKAlternativ::eBasis, 0, 0);
+
+CBaKAlternativ::CBaKAlternativ(
+    const EAusgleich e,
+    const CBaKConversionData* const pCD,
+    CBaKSsWaehrungsUmrechnung* pWUm) :
+  m_eStatus(e), m_pConversionData(pCD),
+  m_pWUm(pWUm) {
+    BIASSERT((!m_pConversionData
+      && m_eStatus==eBasis && !m_pWUm)
+      || (m_pConversionData
+      && m_eStatus!=eBasis && m_pWUm));
+}
+
+// operator bool() overload
+CBaKAlternativ::operator bool() const {
+    return m_eStatus != eBasis;
+}
+
+CBaKCurrency CBaKAlternativ::RechneUm(
+    const CBaKCurrency& cur) const {
+    if (m_eStatus == eBasis) {
+        BIASSERT(false);
+        return cur;
+    }
+    CBaKCurrency result;
+    m_pWUm->RechneUm(cur, result,
+        m_pConversionData);
+    return result;
+}</code></pre>
+</div>
+<div class="col after">
+<h4>Java 25 — Alternativ.java</h4>
+<pre><code class="language-java">// Immutable, null-safe, comparable
+public final class Alternativ
+    implements Comparable&lt;Alternativ&gt; {
+
+  public static final Alternativ
+    KEINE_UMRECHNUNG =
+      new Alternativ(EAusgleich.BASIS,
+          null, null);
+
+  private final EAusgleich status;
+  private final ConversionData data;
+  private final SsWaehrungsUmrechnung umr;
+
+  // Explicit method replaces operator bool()
+  public boolean isActive() {
+      return status != EAusgleich.BASIS;
+  }
+
+  // Safe delegation, no assertions needed
+  public BigDecimal rechneUm(
+      BigDecimal basisWert) {
+    if (!isActive()
+        || data == null || umr == null) {
+      return basisWert;
+    }
+    return umr.rechneUm(basisWert, data);
+  }
+
+  // equals, hashCode, compareTo
+  // with proper value semantics
+}</code></pre>
+</div>
+</div>
+</section>
+
+<!-- LIVE DEMO CUE: Build & Test -->
+<section data-background-color="#FFFFFF">
+<h2 style="color: var(--accent);">Build & Test — Live</h2>
+<div class="terminal-block" style="margin-top: 2rem;">
+<p><span class="prompt">$</span> cd app</p>
+<p><span class="prompt">$</span> ./gradlew compileJava</p>
+<p><span class="output">BUILD SUCCESSFUL in 5s</span></p>
+<p>&nbsp;</p>
+<p><span class="prompt">$</span> ./gradlew test</p>
+<p><span class="output">BUILD SUCCESSFUL — 146 tests passing</span></p>
+</div>
+<p style="font-size: 0.55em; color: var(--text-muted); margin-top: 2rem;">→ Run live, then show HexagonalArchitectureTest.java + module-info.java in IDE</p>
+</section>
+
+<!-- SLIDE 8: THE FRAMEWORK -->
+<section data-background-color="#FFFFFF">
+<h2>The Framework</h2>
+<p class="subtitle">Reproducible, scalable, AI-native migration methodology</p>
+<div class="framework-flow">
+<div class="framework-step">
+<div class="step-num">1</div>
+<div class="step-title">Understand</div>
+<div class="step-desc">Knowledge graph, dependency map, architecture analysis</div>
+</div>
+<div class="framework-step">
+<div class="step-num">2</div>
+<div class="step-title">Plan</div>
+<div class="step-desc">Wave-ordered phases, risk matrix, per-file translation plans</div>
+</div>
+<div class="framework-step">
+<div class="step-num">3</div>
+<div class="step-title">Execute</div>
+<div class="step-desc">AI agents translate with compile-on-save enforcement</div>
+</div>
+<div class="framework-step">
+<div class="step-num">4</div>
+<div class="step-title">Verify</div>
+<div class="step-desc">Behavioral equivalence, ArchUnit gates, semantic validation</div>
+</div>
+<div class="framework-step">
+<div class="step-num">5</div>
+<div class="step-title">Review</div>
+<div class="step-desc">Two-pass: fidelity to source + minimalism (no feature creep)</div>
+</div>
+<div class="framework-step">
+<div class="step-num">6</div>
+<div class="step-title">Iterate</div>
+<div class="step-desc">Resume-safe, context-preserving across sessions</div>
+</div>
+</div>
+<div style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: center;">
+<span class="pill">Kiro</span>
+<span class="pill blue">Claude</span>
+<span class="pill purple">Codex</span>
+<span style="font-size: 0.6em; color: var(--text-muted); align-self: center; margin-left: 0.5rem;">— Same standards, any AI agent</span>
+</div>
+</section>
+
+
+<!-- SLIDE 9: CORE INTELLIGENCE TOOLS -->
+<section data-background-color="#FFFFFF">
+<h2>Core Intelligence Layer</h2>
+<p class="subtitle">Two open-source tools integrated into every migration — understanding at scale</p>
+<div class="comparison">
+<div class="col" style="border-color: rgba(10,132,255,0.25);">
+<h4 style="color: var(--accent);">Understand Anything</h4>
+<p style="font-size: 0.55em; color: var(--text-muted); margin-bottom: 0.8rem;">github.com/Egonex-AI/Understand-Anything</p>
+<div style="font-size: 0.6em; line-height: 1.7;">
+<ul>
+<li>Produces <strong>interactive knowledge graphs</strong> from any codebase</li>
+<li>Works on undocumented legacy — no prior docs needed</li>
+<li>Maps architecture, components, relationships automatically</li>
+<li>God nodes, community detection, query/path/explain tools</li>
+<li>Generates onboarding guides, architecture tours</li>
+<li>Feeds directly into <code>migrate-init</code> understanding phase</li>
+</ul>
+</div>
+<div style="margin-top: 0.8rem; font-size: 0.55em; color: var(--accent);">→ Solves: "Nobody understands this 20-year-old code anymore"</div>
+</div>
+<div class="col" style="border-color: rgba(191,90,242,0.25);">
+<h4 style="color: var(--purple);">Graphify</h4>
+<p style="font-size: 0.55em; color: var(--text-muted); margin-bottom: 0.8rem;">github.com/Graphify-Labs/graphify</p>
+<div style="font-size: 0.6em; line-height: 1.7;">
+<ul>
+<li>Converts source into <strong>persistent knowledge graphs</strong></li>
+<li>Dramatically reduces token consumption per AI query</li>
+<li>AI retrieves only relevant subgraphs, not entire files</li>
+<li>Enables multi-session context without re-reading source</li>
+<li>Cost optimization: fewer tokens = lower API spend at scale</li>
+<li>Integrated into every migration skill as a core dependency</li>
+</ul>
+</div>
+<div style="margin-top: 0.8rem; font-size: 0.55em; color: var(--purple);">→ Solves: "AI context windows aren't big enough for large codebases"</div>
+</div>
+</div>
+<p class="fragment" style="font-size: 0.6em; margin-top: 1.2rem; color: var(--text-secondary);">
+Both tools are open-source, already integrated into our framework skills, and run locally on your infrastructure.
+</p>
+</section>
+
+<!-- SLIDE 10: LEARNING FROM YOUR CODE -->
+<section data-background-color="#FFFFFF">
+<h2>We Learn From <span class="accent">Your</span> Code</h2>
+<p class="subtitle">Our framework adopts YOUR established patterns — not generic best practices</p>
+<div class="comparison">
+<div class="col" style="border-color: rgba(124,58,237,0.3);">
+<h4 style="color: #a855f7;">What We Extracted</h4>
+<div style="font-size: 0.55em; line-height: 1.7;">
+<ul>
+<li><code>de.datev.*</code> package conventions</li>
+<li>Layered: presentation → business → external → persistence</li>
+<li>Adapter naming (GatewayAdapter, DbAdapter)</li>
+<li>Lombok: <code>@RequiredArgsConstructor</code>, <code>@Slf4j</code></li>
+<li>MapStruct with Spring component model</li>
+<li>Constructor injection only (zero field injection)</li>
+<li>Error codes with service prefix</li>
+<li>ArchUnit for architecture governance</li>
+<li>Cucumber BDD + JUnit 5 + WireMock</li>
+<li>OpenAPI annotations (German descriptions)</li>
+<li>Resilience4j circuit breakers</li>
+<li>VK3 data masking for compliance</li>
+</ul>
+</div>
+</div>
+<div class="col after">
+<h4>How We Bake It In</h4>
+<div style="font-size: 0.55em; line-height: 1.7;">
+<ul>
+<li>AI agents receive YOUR standards as steering docs</li>
+<li>Generated code matches your team's style</li>
+<li>No "foreign-looking" Java — feels like your devs wrote it</li>
+<li>Your ArchUnit rules run on our output</li>
+<li>Same test patterns your team already reviews</li>
+<li>Same CI/CD compatibility (Jenkins, SonarQube)</li>
+<li>Same Spring Boot idioms your devs maintain</li>
+<li>Same deployment manifests (Cloud Foundry)</li>
+<li>Continuous refinement as we learn more</li>
+<li>Standards evolve with your team's feedback</li>
+<li>Every new module benefits from all prior learnings</li>
+<li>Zero onboarding friction for reviewers</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- SLIDE 10: CONCRETE PATTERN ADOPTION -->
+<section data-background-color="#FFFFFF">
+<h2>Your Standards, Our Output</h2>
+<p class="subtitle">Real patterns from access-administration-service applied to our migration</p>
+<div class="comparison">
+<div class="col" style="border-color: rgba(124,58,237,0.3);">
+<h4 style="color: #a855f7;">Your Existing Service</h4>
+<pre><code class="language-java">@Service
+@Slf4j
+@RequiredArgsConstructor
+public class PersonContextService {
+  private final OmAdapter omAdapter;
+  private final PersonContextDbAdapter db;
+
+  public PersonContext findByIds(
+      PersonContextId id) {
+    return db
+      .findByPersonContextId(id)
+      .orElseThrow(() ->
+        new RvoNotFoundException(
+          "#RVOPP0404",
+          "PersonContext not found"));
+  }
+}</code></pre>
+</div>
+<div class="col after">
+<h4>Our AI-Generated Output</h4>
+<pre><code class="language-java">@Service
+@Slf4j
+@RequiredArgsConstructor
+public class AuswertungsService {
+  private final SchnittstelleAdapter ssAdp;
+  private final BerechnungskontextDb db;
+
+  public Auswertung findById(
+      AuswertungsId id) {
+    return db
+      .findByAuswertungsId(id)
+      .orElseThrow(() ->
+        new BilanzNotFoundException(
+          "#BILKERN0404",
+          "Auswertung not found"));
+  }
+}</code></pre>
+</div>
+</div>
+<p style="font-size: 0.65em; margin-top: 1.2rem; color: var(--accent);">
+✓ Same patterns · Same conventions · Same code review experience
+</p>
+</section>
+
+<!-- SLIDE 11: QUALITY GATES -->
+<section data-background-color="#FFFFFF">
+<h2>Built-In Quality Gates</h2>
+<p class="subtitle">Enforced architectural correctness at every step — not just guidelines</p>
+<table class="data-table" style="margin-top: 1.5rem;">
+<tr><th>Gate</th><th>Trigger</th><th>Enforcement</th></tr>
+<tr><td>🔨 Compile-on-save</td><td>Every file save</td><td>Zero compilation errors at all times</td></tr>
+<tr><td>🏛 Domain purity</td><td>File in internal/</td><td>Rejects Spring/Jakarta imports in domain</td></tr>
+<tr><td>🧭 Architecture direction</td><td>File save</td><td>api → internal → spi flow only</td></tr>
+<tr><td>🧪 Test companion</td><td>New class created</td><td>Matching test file must exist</td></tr>
+<tr><td>📐 ArchUnit rules</td><td>Test suite</td><td>Hexagonal boundaries machine-verified</td></tr>
+<tr><td>📦 Module boundary</td><td>Build</td><td>module-info.java enforces export control</td></tr>
+</table>
+<div class="fragment" style="margin-top: 1.2rem;">
+<pre style="font-size: 0.45em;"><code class="language-java">// Real ArchUnit test from the POC — runs on every build
+@ArchTest static final ArchRule api_must_not_depend_on_internal =
+    noClasses().that().resideInAPackage("..api..")
+        .should().dependOnClassesThat().resideInAPackage("..internal..");</code></pre>
+</div>
+</section>
+
+<!-- SLIDE 12: GOD CLASS DECOMPOSITION -->
+<section data-background-color="#FFFFFF">
+<h2>The <code style="color: var(--accent);">.migration/</code> Folder</h2>
+<p class="subtitle">Your migration control center — in git, auditable, no external tools</p>
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-top: 1.8rem;">
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">📊</div>
+<div class="step-title">state.md</div>
+<div class="step-desc">Dashboard — status, phase, files migrated</div>
+</div>
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">⚙️</div>
+<div class="step-title">config.json</div>
+<div class="step-desc">Settings — Java ver, arch style, output type</div>
+</div>
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">📝</div>
+<div class="step-title">decisions.md</div>
+<div class="step-desc">8 architecture choices — human-authored</div>
+</div>
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">🗺️</div>
+<div class="step-title">roadmap.md</div>
+<div class="step-desc">7 phases, dependency-ordered</div>
+</div>
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">🔍</div>
+<div class="step-title">research/</div>
+<div class="step-desc">Risk matrix, legacy stack, dependency map</div>
+</div>
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">📐</div>
+<div class="step-title">phases/</div>
+<div class="step-desc">Per-phase: analysis → plans → verification</div>
+</div>
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">🔗</div>
+<div class="step-title">mapping.md</div>
+<div class="step-desc">C++ class → Java package traceability</div>
+</div>
+<div class="framework-step" style="padding: 1rem;">
+<div class="step-num" style="font-size: 1.4em;">✅</div>
+<div class="step-title">validation/</div>
+<div class="step-desc">Golden master config + test variants</div>
+</div>
+</div>
+<div class="glass-card fragment" style="margin-top: 1.5rem; font-size: 0.65em; padding: 1rem; text-align: center;">
+<em>"If we disappear tomorrow, your next team opens this folder and knows exactly what was done, why, and what's left."</em><br>
+<span style="color: var(--text-muted); font-size: 0.85em; margin-top: 0.3rem; display: inline-block;">Markdown + JSON in git. No external platform. No SaaS dependency. Fully auditable.</span>
+</div>
+</section>
+
+<!-- SLIDE 13: GOD CLASS DECOMPOSITION -->
+<section data-background-color="#FFFFFF">
+<h2>God Class → <span class="accent">Clean Architecture</span></h2>
+<p class="subtitle">CBaKAuswBasis (4,079 LOC) → focused, testable components</p>
+<div class="comparison">
+<div class="col before">
+<h4>C++ — One massive file</h4>
+<div class="arch-diagram">AUSWBASIS.H + AUSWBASIS.CPP
+═══════════════════════════
+  4,079 lines of code
+  3 classes interleaved
+  13+ pure virtual methods
+  String formatting
+  Currency handling
+  Print table creation
+  Column layout logic
+  Null handling
+  Variable substitution
+  Output lifecycle
+  Condition evaluation
+  ALL in ONE file</div>
+</div>
+<div class="col after">
+<h4>Java 25 — Separated concerns</h4>
+<div class="arch-diagram">internal/basis/
+├── AuswBasis.java       (core template)
+├── AuswBasisDaten.java  (data holder)
+├── AuswBasisReader.java (read logic)
+├── AuswBasisConfig.java (configuration)
+└── Index.java           (index utility)
+
+internal/condition/
+├── Bedingung580.java    (column cond)
+└── Bedingung780.java    (period cond)
+
+internal/model/
+├── DruckTab.java        (print table)
+├── Kopfeinstellungen.java
+├── ZotZeilenBereich.java
+└── ... (27 model classes)</div>
+</div>
+</div>
+</section>
+
+
+<!-- SLIDE 13: MIGRATION PHASES -->
+<section data-background-color="#FFFFFF">
+<h2>7 Phases, Fully Traced</h2>
+<p class="subtitle">Every phase: analysis → plan → execute → verify → review. Every commit tagged.</p>
+<table class="data-table">
+<tr><th>#</th><th>Phase</th><th>Scope</th><th>Status</th></tr>
+<tr><td>1</td><td>Foundation — SPI & Model</td><td>10 SPI interfaces + 27 model classes</td><td><span class="pill">DONE</span></td></tr>
+<tr><td>2</td><td>Base Framework</td><td>4,079 LOC god class decomposition</td><td><span class="pill">DONE</span></td></tr>
+<tr><td>3</td><td>Main Evaluations</td><td>14 report classes (Bilanz, GuV, KFR)</td><td><span class="pill">DONE</span></td></tr>
+<tr><td>4</td><td>Account Proofs & Assets</td><td>11 account-level evaluations</td><td><span class="pill">DONE</span></td></tr>
+<tr><td>5</td><td>Specialized Evaluations</td><td>16 classes (BEÜ, EK, MJVG, Grafik)</td><td><span class="pill">DONE</span></td></tr>
+<tr><td>6</td><td>Headers, Misc & Dump</td><td>20 classes (formatting/output)</td><td><span class="pill">DONE</span></td></tr>
+<tr><td>7</td><td>Orchestration & Factory</td><td>Factory + public API integration</td><td><span class="pill">DONE</span></td></tr>
+</table>
+<p class="fragment" style="font-size: 0.6em; margin-top: 1rem; color: var(--text-secondary);">
+Each phase = git tag. You can <code>git checkout migrate-phase-N-complete</code> and inspect any point in the journey.
+</p>
+</section>
+
+<!-- SLIDE 14: THE ADVANTAGE -->
+<section data-background-color="#FFFFFF">
+<h2>The Advantage</h2>
+<p class="subtitle">What AI-assisted migration delivers vs. traditional manual approaches</p>
+<div class="metric-grid">
+<div class="metric-box">
+<span class="number" style="font-size: 2.2em;">×</span>
+<span class="label">Orders of Magnitude Faster</span>
+</div>
+<div class="metric-box">
+<span class="number" style="font-size: 2.2em;">100%</span>
+<span class="label">Traceability Source → Target</span>
+</div>
+<div class="metric-box">
+<span class="number" style="font-size: 2.2em;">∞</span>
+<span class="label">Scales Without Hiring</span>
+</div>
+</div>
+<table class="data-table fragment" style="margin-top: 1rem;">
+<tr><th>Dimension</th><th>Traditional Manual</th><th>AI-Assisted Framework</th></tr>
+<tr><td>Speed</td><td>Months per module, sequential</td><td>Weeks per module, parallelizable</td></tr>
+<tr><td>Architecture quality</td><td>Varies by developer</td><td>Enforced by ArchUnit + hooks</td></tr>
+<tr><td>Test coverage</td><td>Often skipped under pressure</td><td>Mandatory per file, 146 tests</td></tr>
+<tr><td>Knowledge capture</td><td>Lost when people leave</td><td>Encoded in framework forever</td></tr>
+<tr><td>Consistency</td><td>Degrades as team rotates</td><td>Same on module 1 and module 50</td></tr>
+<tr><td>Scaling</td><td>Hire more people (long ramp)</td><td>Add more AI agents (instant)</td></tr>
+</table>
+</section>
+
+<!-- SLIDE 15: MULTI-SOURCE CAPABILITY -->
+<section data-background-color="#FFFFFF">
+<h2>Next Target: <span class="accent">ZOT Subsystem</span></h2>
+<p class="subtitle">The SPI interfaces from the POC are already designed to connect to it</p>
+<table class="data-table" style="margin-top: 1.5rem;">
+<tr><th>Module</th><th>Scope</th><th>Target</th><th>Status</th></tr>
+<tr><td>C++/MFC</td><td>DvBilaAufbKern (Calculation)</td><td>Java 25 Library</td><td><span class="pill">POC DONE ✓</span></td></tr>
+<tr><td>C++ (ZOT)</td><td>ZOT Rendering (200K+ LOC)</td><td>Java 25 Library</td><td><span class="pill blue">READY</span></td></tr>
+</table>
+<div class="fragment glass-card" style="margin-top: 1.5rem; font-size: 0.65em; text-align: left;">
+<p><strong style="color: var(--accent);">Key insight:</strong> The SPI interfaces we designed in this POC (<code>DruckTabCreator</code>, <code>Schnittstelle</code>, <code>SsOutput</code>) are the exact integration points for ZOT. When ZOT is migrated, it implements these interfaces. The two libraries plug together through the ports — no glue code needed.</p>
+</div>
+</section>
+
+<!-- SLIDE 16: 3-YEAR ROADMAP -->
+<section data-background-color="#FFFFFF">
+<h2>How This Scales</h2>
+<p class="subtitle">The framework compounds — every module makes the next one faster</p>
+<div class="metric-grid" style="margin-top: 2rem;">
+<div class="metric-box">
+<span class="number" style="font-size: 1.8em;">↗️</span>
+<span class="label">Each module faster than the last</span>
+</div>
+<div class="metric-box">
+<span class="number" style="font-size: 1.8em;">🔄</span>
+<span class="label">Framework learns continuously</span>
+</div>
+<div class="metric-box">
+<span class="number" style="font-size: 1.8em;">🧩</span>
+<span class="label">Patterns reused across modules</span>
+</div>
+</div>
+<div style="text-align: left; margin-top: 2rem; font-size: 0.75em;">
+<ul>
+<li class="fragment">POC proved the approach on <strong>one module</strong> — DvBilaAufbKern (38K LOC)</li>
+<li class="fragment">ZOT subsystem is the <strong>natural next step</strong> — SPI interfaces already designed for it</li>
+<li class="fragment">From there, we scope together: which modules unlock the most business value?</li>
+<li class="fragment">Framework adapts to your pace — full acceleration or gradual rollout</li>
+</ul>
+</div>
+<div class="fragment glass-card" style="margin-top: 1.5rem; font-size: 0.6em; text-align: center; padding: 1rem;">
+The engagement shape is yours to define. We bring the framework, the methodology, and the proof. You set the scope and speed.
+</div>
+</section>
+
+<!-- SLIDE 17: WHY US -->
+<section class="orb-bg" data-background-color="#FFFFFF">
+<h2>Why Us</h2>
+<p class="subtitle">What no one else brings to this engagement</p>
+<div style="text-align: left; margin-top: 1.5rem; font-size: 0.8em;">
+<ul>
+<li class="fragment"><span class="highlight-green">Proven on YOUR code</span> — not a demo. DvBilaAufbKern compiles. Tests pass.</li>
+<li class="fragment"><span class="highlight-green">Framework, not labor</span> — reproducible process that accelerates with scale</li>
+<li class="fragment"><span class="highlight-green">Agent-agnostic</span> — Kiro, Claude, Codex. No vendor lock-in.</li>
+<li class="fragment"><span class="highlight-green">Domain-aware</span> — preserves German accounting terminology, your semantics</li>
+<li class="fragment"><span class="highlight-green">Architecture-enforced</span> — ArchUnit, module-info, hexagonal. Not just code — correct code.</li>
+<li class="fragment"><span class="highlight-green">Your patterns adopted</span> — output looks like your best developers wrote it</li>
+</ul>
+</div>
+</section>
+
+<!-- SLIDE 18: WHAT WE DELIVERED -->
+<section data-background-color="#FFFFFF">
+<h2>What We Delivered</h2>
+<p class="subtitle">Tangible artifacts you can inspect right now</p>
+<table class="data-table" style="margin-top: 1.5rem;">
+<tr><th>Artifact</th><th>Details</th></tr>
+<tr><td>🏗️ Java 25 Library</td><td>121 production classes, module-info.java, Gradle 9.3</td></tr>
+<tr><td>🧪 Test Suite</td><td>146 tests (JUnit 5 + AssertJ + Mockito + ArchUnit)</td></tr>
+<tr><td>📋 Migration State</td><td>7 phase analyses, 30+ wave plans, verification reports</td></tr>
+<tr><td>🗺️ Architecture Map</td><td>C++ class → Java package mapping + decision log</td></tr>
+<tr><td>📐 ArchUnit Rules</td><td>6 rules enforcing hexagonal boundaries</td></tr>
+<tr><td>🔧 Framework</td><td>Reusable: 9 workflows, 14 standards, 3 agent adapters</td></tr>
+<tr><td>📊 Knowledge Graph</td><td>Full dependency analysis via Graphify + Understand</td></tr>
+<tr><td>🏷️ Git Tags</td><td>Every phase tagged — full audit trail</td></tr>
+</table>
+</section>
+
+<!-- SLIDE 19: CALL TO ACTION -->
+<section class="orb-bg" data-background-color="#FFFFFF">
+<h2 style="color: white;">Next Steps</h2>
+<div style="margin-top: 2.5rem; text-align: left; font-size: 0.85em;">
+<ol style="list-style: none; padding: 0; counter-reset: steps;">
+<li class="fragment" style="margin: 1.2rem 0; padding-left: 2em; position: relative;"><span style="position: absolute; left: 0; color: var(--accent); font-family: 'Space Grotesk'; font-weight: 800;">01</span> <strong>Review the POC</strong> — inspect the code, run the tests, validate the architecture</li>
+<li class="fragment" style="margin: 1.2rem 0; padding-left: 2em; position: relative;"><span style="position: absolute; left: 0; color: var(--accent); font-family: 'Space Grotesk'; font-weight: 800;">02</span> <strong>Select next module</strong> — we migrate a second module to prove repeatability</li>
+<li class="fragment" style="margin: 1.2rem 0; padding-left: 2em; position: relative;"><span style="position: absolute; left: 0; color: var(--accent); font-family: 'Space Grotesk'; font-weight: 800;">03</span> <strong>Scope together</strong> — which modules unlock the most value for you?</li>
+<li class="fragment" style="margin: 1.2rem 0; padding-left: 2em; position: relative;"><span style="position: absolute; left: 0; color: var(--accent); font-family: 'Space Grotesk'; font-weight: 800;">04</span> <strong>Start the engagement</strong> — framework is ready. Knowledge base is built.</li>
+</ol>
+</div>
+<div class="fragment" style="margin-top: 3rem;">
+<p style="font-size: 1.3em; font-weight: 700;"><span class="gradient-text">The question isn't whether to modernize.</span><br><span style="color: var(--text-secondary); font-size: 0.7em;">It's whether to start now — or fall further behind.</span></p>
+</div>
+</section>
+
+<!-- SLIDE 20: APPENDIX -->
+<section data-background-color="#FFFFFF">
+<h2>Appendix: Tech Stack</h2>
+<div class="comparison" style="font-size: 0.75em;">
+<div class="col before">
+<h4>Source</h4>
+<ul style="font-size: 0.85em;">
+<li>C++98 / MFC / Visual C++ (MSVC)</li>
+<li>Static library (DvBilaAufbKern003.lib)</li>
+<li>Windows-only (LPCTSTR, TCHAR)</li>
+<li>Visual SourceSafe</li>
+<li>No tests in source</li>
+<li>Manual memory management</li>
+<li>66-class inheritance hierarchy</li>
+</ul>
+</div>
+<div class="col after">
+<h4>Target</h4>
+<ul style="font-size: 0.85em;">
+<li>Java 25 LTS (records, sealed, patterns)</li>
+<li>Gradle 9.3 + Version Catalog</li>
+<li>module-info.java (JPMS)</li>
+<li>JUnit 5 + AssertJ + Mockito</li>
+<li>ArchUnit (architecture enforcement)</li>
+<li>Hexagonal: api / internal / spi</li>
+<li>Platform-independent JAR</li>
+<li>SLF4J logging (API only)</li>
+</ul>
+</div>
+</div>
+</section>
+
+</div><!-- end slides -->
+</div><!-- end reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  slideNumber: 'c/t',
+  transition: 'fade',
+  transitionSpeed: 'fast',
+  backgroundTransition: 'none',
+  plugins: [RevealHighlight, RevealNotes],
+  width: 1920,
+  height: 1080,
+  margin: 0.06,
+  center: true,
+});
+</script>
+</body>
+</html>
