@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cpp-to-java-ai-framework — Architecture Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1117;
+            color: #e2e8f0;
+            padding: 2rem;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #f1f5f9;
+        }
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+        .diagram-section {
+            background: #1e2130;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #2d3348;
+        }
+        .diagram-section h2 {
+            color: #93c5fd;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .diagram-section p {
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+        .mermaid svg {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>cpp-to-java-ai-framework</h1>
+    <p class="subtitle">Architecture Overview — AI-Agent Framework for C++ → Java 25 Migration</p>
+
+    <!-- Diagram 1: High-Level System Architecture -->
+    <div class="diagram-section">
+        <h2>1. High-Level System Architecture</h2>
+        <p>The framework as a whole: single source of truth in docs/, agent-specific installers, and target project output.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart TB
+    subgraph SOURCE["📁 docs/ — Single Source of Truth"]
+        direction LR
+        STANDARDS["standards/<br/>14 markdown files<br/>Architecture rules,<br/>Java 25 patterns,<br/>profiles, examples"]
+        SKILLS["skills/<br/>9 workflow files<br/>Step-by-step<br/>migration procedures"]
+        HOOKS["hooks/<br/>migration-quality.md<br/>Portable hook<br/>definitions"]
+    end
+
+    subgraph AGENTS["🔧 agents/ — Installer Layer"]
+        direction LR
+        PARSE["parse-hooks.sh<br/>Shared hook compiler<br/>(reads hooks/ → emits JSON)"]
+        KIRO_INST["kiro/install.sh<br/>Generates .kiro/"]
+        CLAUDE_INST["claude/install.sh<br/>Generates CLAUDE.md"]
+        CODEX_INST["codex/install.sh<br/>Generates AGENTS.md"]
+    end
+
+    subgraph TARGETS["🎯 Target Project Outputs"]
+        direction LR
+        subgraph KIRO_OUT["Kiro Agent"]
+            K1[".kiro/steering/"]
+            K2[".kiro/skills/"]
+            K3[".kiro/hooks/"]
+        end
+        subgraph CLAUDE_OUT["Claude Agent"]
+            C1["CLAUDE.md"]
+            C2[".claude/settings.json"]
+        end
+        subgraph CODEX_OUT["Codex Agent"]
+            X1["AGENTS.md + docs/"]
+            X2[".codex/hooks.json"]
+        end
+    end
+
+    STANDARDS --> KIRO_INST
+    STANDARDS --> CLAUDE_INST
+    STANDARDS --> CODEX_INST
+    SKILLS --> KIRO_INST
+    SKILLS --> CLAUDE_INST
+    SKILLS --> CODEX_INST
+    HOOKS --> PARSE
+    PARSE --> KIRO_INST
+    PARSE --> CLAUDE_INST
+    PARSE --> CODEX_INST
+    KIRO_INST --> KIRO_OUT
+    CLAUDE_INST --> CLAUDE_OUT
+    CODEX_INST --> CODEX_OUT
+
+    style SOURCE fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
+    style AGENTS fill:#1e3b2f,stroke:#22c55e,stroke-width:2px
+    style TARGETS fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
+        </pre>
+    </div>
+
+    <!-- Diagram 2: Migration Workflow Pipeline -->
+    <div class="diagram-section">
+        <h2>2. Migration Workflow Pipeline</h2>
+        <p>The 9-step migration workflow and how skills feed into each other.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart LR
+    INIT["🚀 migrate-init<br/>Scan + Understand<br/>UA + Graphify<br/>→ project skeleton"]
+    DETECT["🔍 migrate-detect<br/>Tech detection<br/>Libraries, platforms"]
+    MAP["🗺️ migrate-map<br/>Namespace → Package<br/>mapping"]
+    ANALYZE["📊 migrate-analyze<br/>Deep analysis<br/>Data flow, patterns,<br/>risks, deps"]
+    PLAN["📋 migrate-plan<br/>Translation plans<br/>Wave ordering"]
+    EXECUTE["⚡ migrate-execute<br/>Wave-based<br/>translation"]
+    VERIFY["✅ migrate-verify<br/>Semantic equivalence<br/>C++ vs Java"]
+    REVIEW["🔎 migrate-review<br/>Two-pass review<br/>Fidelity + Minimalism"]
+    RESUME["🔄 migrate-resume<br/>Session recovery"]
+
+    INIT --> DETECT
+    DETECT --> MAP
+    MAP --> ANALYZE
+    ANALYZE --> PLAN
+    PLAN --> EXECUTE
+    EXECUTE --> VERIFY
+    VERIFY --> REVIEW
+    RESUME -.->|"resumes any step"| INIT
+    RESUME -.-> DETECT
+    RESUME -.-> MAP
+    RESUME -.-> ANALYZE
+    RESUME -.-> PLAN
+    RESUME -.-> EXECUTE
+    RESUME -.-> VERIFY
+    RESUME -.-> REVIEW
+
+    style INIT fill:#1e3a5f,stroke:#3b82f6
+    style DETECT fill:#1e3a5f,stroke:#3b82f6
+    style MAP fill:#1e3a5f,stroke:#3b82f6
+    style ANALYZE fill:#2d1e5f,stroke:#8b5cf6
+    style PLAN fill:#2d1e5f,stroke:#8b5cf6
+    style EXECUTE fill:#1e5f3a,stroke:#22c55e
+    style VERIFY fill:#5f4b1e,stroke:#eab308
+    style REVIEW fill:#5f4b1e,stroke:#eab308
+    style RESUME fill:#3b3b3b,stroke:#94a3b8
+        </pre>
+    </div>
+
+    <!-- Diagram 3: Subagent Architecture -->
+    <div class="diagram-section">
+        <h2>3. Migration Subagent Architecture</h2>
+        <p>Specialized subagents spawned by workflow skills for parallel work.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart TB
+    subgraph ORCHESTRATOR["Orchestrator (Main Agent)"]
+        INIT_SK["migrate-init"]
+        DETECT_SK["migrate-detect"]
+        ANALYZE_SK["migrate-analyze"]
+    end
+
+    subgraph SCANNERS["migration-scanner (×4 parallel, fast model)"]
+        S1["scanner-headers<br/>.h / .hpp"]
+        S2["scanner-sources<br/>.cpp / .cc"]
+        S3["scanner-build<br/>CMake, Makefile, vcxproj"]
+        S4["scanner-tests<br/>test/ dirs, *_test.cpp"]
+    end
+
+    subgraph DETECTOR["migration-detector (standard model)"]
+        D1["Scan build files"]
+        D2["Classify dependencies"]
+        D3["Map Java equivalents"]
+        D4["Score risk"]
+    end
+
+    subgraph ANALYZERS["migration-analyzer (×4 parallel, most-capable model)"]
+        A1["analyzer-dataflow<br/>Ownership, lifetimes"]
+        A2["analyzer-patterns<br/>Design patterns, idioms"]
+        A3["analyzer-deps<br/>Call graph, interfaces"]
+        A4["analyzer-risks<br/>Unsafe ops, UB, concurrency"]
+    end
+
+    INIT_SK --> S1 & S2 & S3 & S4
+    INIT_SK --> D1
+    DETECT_SK --> D1
+    D1 --> D2 --> D3 --> D4
+    ANALYZE_SK --> A1 & A2 & A3 & A4
+
+    S1 & S2 & S3 & S4 -->|"inventory.md"| INV[(📄 .migration/<br/>inventory.md)]
+    D4 -->|"research/"| RES[(📄 .migration/<br/>research/)]
+    A1 & A2 & A3 & A4 -->|"analysis.md"| ANA[(📄 .migration/<br/>phases/nn-analysis.md)]
+
+    style ORCHESTRATOR fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
+    style SCANNERS fill:#1e3b2f,stroke:#22c55e,stroke-width:2px
+    style DETECTOR fill:#3b2f1e,stroke:#f59e0b,stroke-width:2px
+    style ANALYZERS fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
+        </pre>
+    </div>
+
+    <!-- Diagram 4: Knowledge Graph Tooling -->
+    <div class="diagram-section">
+        <h2>4. Knowledge Graph Integration (Graphify + Understand-Anything)</h2>
+        <p>Two complementary tools that provide source understanding before and during migration.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart TB
+    CPP["📂 C++ Source Code"]
+    JAVA["📂 Java Target Code"]
+
+    subgraph GRAPHIFY["🔬 Graphify — Analytical Backbone"]
+        direction TB
+        G_SRC["source mode<br/>(migrate-init)"]
+        G_TGT["target mode<br/>(migrate-execute)"]
+        G_CMP["compare mode<br/>(migrate-verify)"]
+        G_ARC["arc42 mode<br/>(migrate-review)"]
+        G_QRY["query mode<br/>(inline, any skill)"]
+        G_OUT["Outputs:<br/>• Community detection (Leiden)<br/>• God node analysis<br/>• Edge confidence tiers<br/>• Surprising connections<br/>• BFS/DFS traversal"]
+    end
+
+    subgraph UA["🧠 Understand-Anything — Human Interface"]
+        direction TB
+        UA_GRAPH["Knowledge graph<br/>Interactive dashboard"]
+        UA_TOUR["Guided tours<br/>Dependency-ordered"]
+        UA_DOMAIN["Domain extraction<br/>Business processes"]
+        UA_ONBOARD["Onboarding guide<br/>New team members"]
+        UA_DIFF["Diff impact<br/>Ripple effects"]
+    end
+
+    CPP --> G_SRC
+    CPP --> UA_GRAPH
+    JAVA --> G_TGT
+    G_SRC --> G_CMP
+    G_TGT --> G_CMP
+    G_CMP -->|"drift detection"| DRIFT["⚠️ Architectural<br/>Drift Report"]
+    G_ARC -->|"generates"| ARC42["📖 ARC42<br/>Documentation"]
+    UA_GRAPH --> UA_TOUR
+    UA_GRAPH --> UA_DOMAIN
+    UA_GRAPH --> UA_ONBOARD
+
+    subgraph STORAGE[".migration/graphs/"]
+        SG["source/graph.json"]
+        TG["target/graph.json"]
+        CG["comparison/drift-report.md"]
+    end
+
+    G_SRC --> SG
+    G_TGT --> TG
+    G_CMP --> CG
+
+    style GRAPHIFY fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
+    style UA fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
+    style STORAGE fill:#2d2d2d,stroke:#64748b
+        </pre>
+    </div>
+
+    <!-- Diagram 5: Target Java Architecture (what gets generated) -->
+    <div class="diagram-section">
+        <h2>5. Target Java Architecture — Hexagonal (Service Profile)</h2>
+        <p>The opinionated architecture enforced by the framework in migrated services.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart TB
+    subgraph ADAPTERS_IN["Adapter IN (Driving)"]
+        REST["REST Controllers<br/>Spring MVC"]
+        CLI_A["CLI Commands<br/>Picocli"]
+        GRPC["gRPC Services"]
+        MSG_IN["Message Listeners<br/>Kafka/SQS"]
+    end
+
+    subgraph APP["Application Layer"]
+        USECASES["Use Cases<br/>(Orchestration)"]
+        DTO["DTOs + Mappers"]
+    end
+
+    subgraph DOMAIN["🏛️ Domain (Pure Java — No Frameworks)"]
+        direction TB
+        PORTS_IN["port/in/<br/>Use Case Interfaces"]
+        ENTITIES["Entities<br/>Records, Sealed Types"]
+        VALUE["Value Objects"]
+        DOMAIN_SVC["Domain Services"]
+        PORTS_OUT["port/out/<br/>Repository Interfaces"]
+    end
+
+    subgraph ADAPTERS_OUT["Adapter OUT (Driven)"]
+        DB["JPA/JDBC<br/>PostgreSQL"]
+        HTTP["HTTP Clients<br/>java.net.http"]
+        MSG_OUT["Message Publishers<br/>Kafka/SQS"]
+        FS["File System"]
+    end
+
+    ADAPTERS_IN -->|"calls"| PORTS_IN
+    PORTS_IN --> USECASES
+    USECASES --> ENTITIES & VALUE & DOMAIN_SVC
+    DOMAIN_SVC --> PORTS_OUT
+    PORTS_OUT -->|"implemented by"| ADAPTERS_OUT
+
+    ARCHUNIT["🛡️ ArchUnit<br/>Enforces boundaries"]
+    ARCHUNIT -.->|"domain has ZERO<br/>framework imports"| DOMAIN
+    ARCHUNIT -.->|"adapters never<br/>bypass ports"| ADAPTERS_IN
+    ARCHUNIT -.->|"direction: always<br/>inward"| ADAPTERS_OUT
+
+    style DOMAIN fill:#1e3a5f,stroke:#3b82f6,stroke-width:3px
+    style APP fill:#2d1e5f,stroke:#8b5cf6,stroke-width:2px
+    style ADAPTERS_IN fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
+    style ADAPTERS_OUT fill:#3b2f1e,stroke:#f59e0b,stroke-width:2px
+        </pre>
+    </div>
+
+    <!-- Diagram 6: Quality Hooks System -->
+    <div class="diagram-section">
+        <h2>6. Quality Hooks System</h2>
+        <p>Automated checks that run during migration — same logic, three native formats.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart LR
+    subgraph HOOKS_SRC["docs/hooks/migration-quality.md"]
+        H1["compile-on-save<br/>trigger: file-save<br/>type: command"]
+        H2["domain-purity-check<br/>trigger: file-create<br/>type: agent"]
+        H3["architecture-direction-check<br/>trigger: file-save<br/>type: agent"]
+        H4["test-companion-reminder<br/>trigger: file-create<br/>type: agent"]
+    end
+
+    PARSE["parse-hooks.sh<br/>Shared compiler"]
+
+    subgraph OUTPUT["Agent-Native Formats"]
+        KIRO_H[".kiro/hooks/<br/>JSON array"]
+        CLAUDE_H[".claude/settings.json<br/>customInstructions + commands"]
+        CODEX_H[".codex/hooks.json<br/>Hook definitions"]
+    end
+
+    H1 & H2 & H3 & H4 --> PARSE
+    PARSE -->|"--format kiro"| KIRO_H
+    PARSE -->|"--format claude"| CLAUDE_H
+    PARSE -->|"--format codex"| CODEX_H
+
+    subgraph RUNTIME["Runtime Behavior"]
+        EVT["File Event<br/>(save/create)"]
+        CHECK{"Matcher<br/>matches?"}
+        CMD["Run Command<br/>(gradlew compileJava)"]
+        AGENT["Spawn Agent Check<br/>(domain purity, etc.)"]
+    end
+
+    KIRO_H & CLAUDE_H & CODEX_H -.-> EVT
+    EVT --> CHECK
+    CHECK -->|"type: command"| CMD
+    CHECK -->|"type: agent"| AGENT
+
+    style HOOKS_SRC fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
+    style OUTPUT fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
+    style RUNTIME fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
+        </pre>
+    </div>
+
+    <!-- Diagram 7: Output Types -->
+    <div class="diagram-section">
+        <h2>7. Output Type Profiles</h2>
+        <p>Four target artifact types — the framework adapts architecture and tooling per type.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart TB
+    CPP["C++ Source<br/>(any type)"]
+
+    CPP --> SVC & LIB & SDK & CLI
+
+    subgraph SVC["🖥️ Service"]
+        SVC_D["Spring Boot 4.x<br/>Hexagonal Architecture<br/>Virtual Threads<br/>Full Observability<br/>REST/gRPC adapters"]
+    end
+
+    subgraph LIB["📚 Library"]
+        LIB_D["Plain JAR<br/>api/internal/spi layering<br/>module-info.java<br/>Zero framework lock-in<br/>No @SpringBootApplication"]
+    end
+
+    subgraph SDK["🧰 SDK"]
+        SDK_D["Library +<br/>Javadoc (100% public API)<br/>@Stable/@Beta/@Internal<br/>Binary compatibility (japicmp)<br/>Samples module"]
+    end
+
+    subgraph CLI_T["⌨️ CLI"]
+        CLI_D["Picocli commands<br/>GraalVM native image<br/>stdout/stderr contracts<br/>Exit codes<br/>Shell completions"]
+    end
+
+    subgraph COMMON["Common to All Types"]
+        COM["Java 25 features<br/>Records, Sealed types<br/>Pattern matching<br/>Scoped values<br/>Behavioral equivalence<br/>Test-first migration"]
+    end
+
+    SVC ~~~ COMMON
+    LIB ~~~ COMMON
+    SDK ~~~ COMMON
+    CLI_T ~~~ COMMON
+
+    style SVC fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
+    style LIB fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
+    style SDK fill:#3b2f1e,stroke:#f59e0b,stroke-width:2px
+    style CLI_T fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
+    style COMMON fill:#2d2d2d,stroke:#94a3b8,stroke-width:1px,stroke-dasharray: 5 5
+        </pre>
+    </div>
+
+    <!-- Diagram 8: State Management -->
+    <div class="diagram-section">
+        <h2>8. Migration State (.migration/ Directory)</h2>
+        <p>Persistent state that tracks progress, decisions, and artifacts across sessions.</p>
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+flowchart TB
+    subgraph STATE[".migration/ — Persistent State"]
+        direction TB
+        CONFIG["config.json<br/>output_type, target_root,<br/>source_root"]
+        STATE_MD["state.md<br/>Current phase, wave,<br/>completion %"]
+        INV["inventory.md<br/>All C++ files classified"]
+        DEC["decisions.md<br/>Every architectural divergence"]
+
+        subgraph RESEARCH["research/"]
+            LEGACY["legacy-stack.md"]
+            DEPMAP["dependency-map.md"]
+            RISK["risk-matrix.md"]
+        end
+
+        subgraph PHASES["phases/"]
+            P_PLAN["nn-plan.md<br/>Wave ordering"]
+            P_ANALYSIS["nn-analysis.md<br/>Deep analysis"]
+            P_PROGRESS["nn-progress.md<br/>File-by-file status"]
+        end
+
+        subgraph GRAPHS["graphs/"]
+            G_SRC["source/<br/>C++ architecture graph"]
+            G_TGT["target/<br/>Java architecture graph"]
+            G_CMP["comparison/<br/>Drift report"]
+        end
+    end
+
+    SKILLS_RUN["Workflow Skills<br/>(read & write state)"]
+    RESUME_SK["migrate-resume<br/>(reads state to recover)"]
+
+    SKILLS_RUN --> STATE
+    RESUME_SK -->|"restores context from"| STATE
+
+    style STATE fill:#1e293b,stroke:#3b82f6,stroke-width:2px
+    style RESEARCH fill:#2d2d2d,stroke:#64748b
+    style PHASES fill:#2d2d2d,stroke:#64748b
+    style GRAPHS fill:#2d2d2d,stroke:#64748b
+        </pre>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

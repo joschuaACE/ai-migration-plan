@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legacy-to-Modern Migration Methodology — Valantic</title>
+    <style>
+        :root {
+            --confluence-blue: #0052CC;
+            --confluence-blue-light: #DEEBFF;
+            --confluence-purple: #6554C0;
+            --confluence-green: #006644;
+            --confluence-green-light: #E3FCEF;
+            --confluence-yellow: #FF991F;
+            --confluence-yellow-light: #FFFAE6;
+            --confluence-red: #DE350B;
+            --confluence-red-light: #FFEBE6;
+            --sidebar-bg: #FAFBFC;
+            --border: #DFE1E6;
+            --text-primary: #172B4D;
+            --text-secondary: #6B778C;
+            --text-subtle: #97A0AF;
+            --bg-white: #FFFFFF;
+            --header-bg: #0052CC;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+            background: #F4F5F7;
+        }
+        .top-bar {
+            background: var(--header-bg);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            height: 56px;
+        }
+        .top-bar .logo { font-weight: 700; font-size: 18px; letter-spacing: -0.5px; }
+        .top-bar .space-name { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 3px; font-size: 13px; }
+        .top-bar .breadcrumb { font-size: 13px; opacity: 0.8; margin-left: auto; }
+        .layout { display: flex; margin-top: 56px; min-height: calc(100vh - 56px); }
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            position: fixed;
+            top: 56px; bottom: 0;
+            overflow-y: auto;
+        }
+        .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-subtle); padding: 0 20px; margin-bottom: 12px; }
+        .sidebar a { display: block; padding: 6px 20px; color: var(--text-primary); text-decoration: none; font-size: 14px; border-left: 3px solid transparent; transition: all 0.15s; }
+        .sidebar a:hover { background: #EBECF0; border-left-color: var(--confluence-blue); }
+        .sidebar a.active { background: var(--confluence-blue-light); border-left-color: var(--confluence-blue); font-weight: 600; }
+        .sidebar .section-group { margin-bottom: 20px; }
+        .sidebar .section-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); padding: 8px 20px 4px; }
+        .main { margin-left: 280px; flex: 1; padding: 40px 60px; max-width: 960px; }
+        .page-meta { display: flex; gap: 24px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); flex-wrap: wrap; }
+        .page-meta .label { font-weight: 600; color: var(--text-primary); }
+        h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+        h2 { font-size: 22px; font-weight: 600; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        h3 { font-size: 17px; font-weight: 600; margin: 32px 0 12px; }
+        h4 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: var(--text-secondary); }
+        p { margin-bottom: 16px; font-size: 14px; }
+        ul, ol { margin: 0 0 16px 24px; font-size: 14px; }
+        li { margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+        th { background: #F4F5F7; font-weight: 600; text-align: left; padding: 10px 12px; border: 1px solid var(--border); }
+        td { padding: 10px 12px; border: 1px solid var(--border); vertical-align: top; }
+        tr:hover td { background: #FAFBFC; }
+        .panel { border-radius: 3px; padding: 16px 20px; margin: 16px 0 24px; font-size: 14px; }
+        .panel-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .panel-info { background: var(--confluence-blue-light); border-left: 4px solid var(--confluence-blue); }
+        .panel-success { background: var(--confluence-green-light); border-left: 4px solid var(--confluence-green); }
+        .panel-warning { background: var(--confluence-yellow-light); border-left: 4px solid var(--confluence-yellow); }
+        .panel-error { background: var(--confluence-red-light); border-left: 4px solid var(--confluence-red); }
+        .status { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .status-green { background: #E3FCEF; color: #006644; }
+        .status-blue { background: #DEEBFF; color: #0052CC; }
+        .status-yellow { background: #FFFAE6; color: #FF991F; }
+        .status-purple { background: #EAE6FF; color: #6554C0; }
+        code { background: #F4F5F7; padding: 2px 6px; border-radius: 3px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; }
+        pre { background: #172B4D; color: #B3D4FF; padding: 16px 20px; border-radius: 3px; overflow-x: auto; margin: 16px 0 24px; font-size: 12px; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: inherit; }
+        .flow-diagram { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 20px 0 28px; }
+        .flow-step { background: var(--confluence-blue-light); border: 1px solid #B3D4FF; padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: 600; color: var(--confluence-blue); }
+        .flow-arrow { color: var(--text-subtle); font-size: 18px; }
+        .numbered-steps { counter-reset: step; list-style: none; margin-left: 0; }
+        .numbered-steps li { counter-increment: step; padding-left: 40px; position: relative; margin-bottom: 16px; }
+        .numbered-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; background: var(--confluence-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+        details { margin: 12px 0; border: 1px solid var(--border); border-radius: 3px; }
+        summary { padding: 12px 16px; cursor: pointer; font-weight: 600; font-size: 14px; background: #FAFBFC; }
+        details[open] summary { border-bottom: 1px solid var(--border); }
+        details .detail-content { padding: 16px; }
+        .version-badge { background: var(--confluence-purple); color: white; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 12px; vertical-align: middle; }
+        @media (max-width: 1024px) { .sidebar { display: none; } .main { margin-left: 0; padding: 24px; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo">Valantic STI</div>
+        <div class="space-name">Engineering / Migration Practice</div>
+        <div class="breadcrumb">Engineering → Methodologies → Legacy-to-Modern Migration</div>
+    </div>
+
+    <div class="layout">
+        <nav class="sidebar">
+            <div class="sidebar-title">Page Contents</div>
+            <div class="section-group">
+                <a href="#executive-summary" class="active">Executive Summary</a>
+            </div>
+            <div class="section-group">
+                <div class="section-label">Methodology</div>
+                <a href="#core-principles">Core Principles</a>
+                <a href="#iron-laws">Iron Laws</a>
+                <a href="#migration-ladder">Migration Ladder</a>
+                <a href="#behavioral-equivalence">Behavioral Equivalence</a>
+            </div>
+            <div class="section-group">
+                <div class="section-label">Process</div>
+                <a href="#process-phases">Process Phases</a>
+                <a href="#phase-init">Initialization</a>
+                <a href="#phase-analyze">Analysis</a>
+                <a href="#phase-plan">Planning</a>
+                <a href="#phase-execute">Execution</a>
+                <a href="#phase-verify">Verification</a>
+                <a href="#phase-review">Review</a>
+            </div>
+            <div class="section-group">
+                <div class="section-label">Architecture</div>
+                <a href="#architecture">Target Architecture</a>
+                <a href="#output-types">Output Type Profiles</a>
+                <a href="#standards-adaptation">Standards Adaptation</a>
+            </div>
+            <div class="section-group">
+                <div class="section-label">Quality & Tooling</div>
+                <a href="#quality-assurance">Quality Assurance</a>
+                <a href="#tooling">Tooling & AI Strategy</a>
+                <a href="#knowledge-graphs">Knowledge Graphs</a>
+            </div>
+            <div class="section-group">
+                <div class="section-label">Governance</div>
+                <a href="#risk-management">Risk Management</a>
+                <a href="#deliverables">Deliverables</a>
+                <a href="#audit-trail">Audit Trail</a>
+            </div>
+        </nav>
+
+        <main class="main">
+            <div class="page-meta">
+                <div><span class="label">Space:</span> Engineering</div>
+                <div><span class="label">Owner:</span> Valantic STI — Migration Practice</div>
+                <div><span class="label">Version:</span> 3.0</div>
+                <div><span class="label">Status:</span> <span class="status status-green">Approved</span></div>
+                <div><span class="label">Last updated:</span> July 2026</div>
+            </div>
+
+            <h1 id="executive-summary">Legacy-to-Modern Migration Methodology<span class="version-badge">v3.0</span></h1>
+            <p style="font-size:16px; color: var(--text-secondary); margin-bottom: 32px;">
+                Valantic STI's engineering methodology for migrating legacy applications to modern target platforms —
+                a structured, AI-augmented, quality-gated process delivering behaviorally equivalent code with
+                full architectural documentation. Language-agnostic. Technology-adaptive.
+            </p>
+
+            <div class="panel panel-info">
+                <div class="panel-title">Executive Summary</div>
+                <p style="margin-bottom:12px">
+                    Valantic STI has developed a <strong>repeatable, industrialized methodology</strong> for migrating
+                    legacy codebases to modern platforms. The approach combines rigorous software engineering principles with
+                    AI-augmented execution, producing production-ready code that preserves 100% of business logic
+                    while modernizing the architecture.
+                </p>
+                <p style="margin-bottom:12px">
+                    This methodology is <strong>language-agnostic and technology-adaptive</strong>. It applies equally to migrations
+                    such as COBOL → Java, C++ → Kotlin, Delphi → .NET, monolith → microservices, or any
+                    legacy-to-modern transformation. The principles remain constant; the technology-specific
+                    standards are configured per engagement.
+                </p>
+                <p style="margin-bottom:12px"><strong>Key differentiators:</strong></p>
+                <ul style="margin-bottom:0">
+                    <li><strong>Behavioral equivalence guarantee</strong> — same inputs produce same outputs, verified through multi-dimensional analysis</li>
+                    <li><strong>Architecture-first migration</strong> — code lands in a proven target architecture from day one, not refactored later</li>
+                    <li><strong>10 automated quality gates</strong> per module — compilation, tests, architecture rules, coverage, semantic equivalence, drift detection</li>
+                    <li><strong>Knowledge graph-driven understanding</strong> — source code is analyzed and understood before any translation begins</li>
+                    <li><strong>Full traceability</strong> — every decision recorded, every file tracked, complete audit trail for compliance</li>
+                    <li><strong>Client ecosystem adaptation</strong> — target standards, naming conventions, security models, and deployment patterns adapted to each client's existing ecosystem</li>
+                    <li><strong>Automatic architecture documentation</strong> — complete ARC42 docs generated as a byproduct, not extra work</li>
+                </ul>
+            </div>
+
+            <h3>Scope of This Document</h3>
+            <p>
+                This document describes the Valantic STI engineering methodology for legacy-to-modern
+                migration engagements. It covers methodology, process, architecture approach, quality assurance,
+                tooling, risk management, and deliverables. It is technology-agnostic — specific source/target
+                technology choices are configured per engagement while the process remains constant.
+            </p>
+
+            <h3>Applicability</h3>
+            <table>
+                <tr>
+                    <th>Migration Type</th>
+                    <th>Methodology Applicability</th>
+                </tr>
+                <tr>
+                    <td>Language migration (e.g., C++ → Java, COBOL → Kotlin, Delphi → C#)</td>
+                    <td><span class="status status-green">Full</span> — all phases apply</td>
+                </tr>
+                <tr>
+                    <td>Framework migration (e.g., legacy framework → modern equivalent)</td>
+                    <td><span class="status status-green">Full</span> — all phases apply</td>
+                </tr>
+                <tr>
+                    <td>Monolith decomposition (modular monolith → services)</td>
+                    <td><span class="status status-blue">Adapted</span> — same process, heavier analysis phase</td>
+                </tr>
+                <tr>
+                    <td>Platform migration (on-prem → cloud-native)</td>
+                    <td><span class="status status-blue">Adapted</span> — execution phase includes infrastructure</td>
+                </tr>
+                <tr>
+                    <td>Runtime modernization (same language, newer version + patterns)</td>
+                    <td><span class="status status-yellow">Partial</span> — lighter analysis, same verification</td>
+                </tr>
+            </table>
+
+            <h3>Engagement Model</h3>
+            <table>
+                <tr>
+                    <th>Dimension</th>
+                    <th>Our Approach</th>
+                </tr>
+                <tr>
+                    <td>Translation model</td>
+                    <td>AI-augmented with human governance — AI performs mechanical translation under strict constraints; architects review and decide</td>
+                </tr>
+                <tr>
+                    <td>Architecture</td>
+                    <td>Opinionated — target architecture enforced automatically, not debated per-file</td>
+                </tr>
+                <tr>
+                    <td>Quality</td>
+                    <td>Automated gates — code that violates architecture rules cannot pass; no reliance on manual review alone</td>
+                </tr>
+                <tr>
+                    <td>Documentation</td>
+                    <td>Generated from code — ARC42 architecture docs produced from analysis artifacts, always current</td>
+                </tr>
+                <tr>
+                    <td>Risk</td>
+                    <td>Quantified — architecture drift measured numerically via knowledge graph comparison</td>
+                </tr>
+                <tr>
+                    <td>Progress</td>
+                    <td>Granular — per-file, per-wave, per-module tracking with resumability after any interruption</td>
+                </tr>
+            </table>
+
+
+            <!-- SECTION 2: METHODOLOGY & CORE PRINCIPLES -->
+            <h2 id="core-principles">2. Methodology & Core Principles</h2>
+            <p>
+                The Valantic STI migration methodology is built on three foundational pillars that govern
+                every decision, every line of translated code, and every architectural choice. These are
+                not guidelines — they are non-negotiable engineering constraints enforced through automation.
+            </p>
+
+            <h3 id="iron-laws">2.1 The Five Iron Laws</h3>
+            <p>
+                These laws override all other considerations. Violation of any iron law is treated as a
+                defect, regardless of schedule pressure or perceived simplicity of the code.
+            </p>
+
+            <table>
+                <tr>
+                    <th style="width:40px">#</th>
+                    <th>Iron Law</th>
+                    <th>Rationale</th>
+                    <th>Enforcement</th>
+                </tr>
+                <tr>
+                    <td><strong>1</strong></td>
+                    <td><strong>No translation without source analysis first</strong></td>
+                    <td>Prevents shallow translations that miss control flow, edge cases, or implicit coupling</td>
+                    <td>Analysis artifacts required before plan generation is permitted</td>
+                </tr>
+                <tr>
+                    <td><strong>2</strong></td>
+                    <td><strong>No module marked complete without semantic equivalence verification</strong></td>
+                    <td>Ensures business logic preservation is proven, not assumed</td>
+                    <td>Verification gate with numerical scoring — must exceed threshold</td>
+                </tr>
+                <tr>
+                    <td><strong>3</strong></td>
+                    <td><strong>No new dependency without checking if the platform already provides it</strong></td>
+                    <td>Prevents dependency bloat and unnecessary third-party risk</td>
+                    <td>Migration Ladder enforced — must justify why higher rungs don't apply</td>
+                </tr>
+                <tr>
+                    <td><strong>4</strong></td>
+                    <td><strong>No architectural decisions without formal record</strong></td>
+                    <td>Prevents silent redesigns — every divergence from 1:1 translation is intentional and traceable</td>
+                    <td>Decision records are numbered, permanent, and part of the audit trail</td>
+                </tr>
+                <tr>
+                    <td><strong>5</strong></td>
+                    <td><strong>No code without tests</strong></td>
+                    <td>Behavioral equivalence requires proof; tests are that proof</td>
+                    <td>Automated hooks block file creation without corresponding test</td>
+                </tr>
+            </table>
+
+            <div class="panel panel-warning">
+                <div class="panel-title">Anti-Rationalization Principle</div>
+                <p style="margin-bottom:0">
+                    Common shortcuts are pre-emptively blocked: "This file is too simple to analyze" — NO, all files
+                    are analyzed. "I'll improve the architecture while migrating" — NO, migrate first, improve second.
+                    "This is obviously equivalent" — NO, verification is automated, not subjective.
+                </p>
+            </div>
+
+            <h3 id="migration-ladder">2.2 The Migration Ladder</h3>
+            <p>
+                Before writing any target code, the engineer (or AI agent) must <strong>climb the ladder from bottom to top</strong>,
+                stopping at the first rung that solves the problem. This ensures migrated code is as simple as possible
+                and leverages platform capabilities rather than re-implementing them.
+            </p>
+
+            <ol class="numbered-steps">
+                <li>
+                    <strong>Does this source code need to exist in the target?</strong><br>
+                    <span style="color: var(--text-secondary)">YAGNI — skip dead code, unreachable paths, deprecated features. Mark in inventory and move on.</span>
+                </li>
+                <li>
+                    <strong>Does the target framework/platform already provide this?</strong><br>
+                    <span style="color: var(--text-secondary)">Use built-in capabilities. Don't rewrite what the platform gives for free.</span>
+                </li>
+                <li>
+                    <strong>Does the target language's standard library cover it?</strong><br>
+                    <span style="color: var(--text-secondary)">Standard library types are stable, performant, and dependency-free.</span>
+                </li>
+                <li>
+                    <strong>Does an already-chosen dependency handle it?</strong><br>
+                    <span style="color: var(--text-secondary)">Reuse what's already in the project. Don't add a second library for the same capability.</span>
+                </li>
+                <li>
+                    <strong>Can a declarative mechanism do it?</strong><br>
+                    <span style="color: var(--text-secondary)">Annotations, attributes, decorators, configuration — declarative over imperative.</span>
+                </li>
+                <li>
+                    <strong>Can it be one line?</strong><br>
+                    <span style="color: var(--text-secondary)">Write one line. No abstraction needed for one-liners.</span>
+                </li>
+                <li>
+                    <strong>Only then: write the minimum implementation</strong><br>
+                    <span style="color: var(--text-secondary)">The simplest code that passes the test. Nothing more.</span>
+                </li>
+            </ol>
+
+            <div class="panel panel-info">
+                <div class="panel-title">Adaptation Per Engagement</div>
+                <p style="margin-bottom:0">
+                    The ladder adapts to the output type. For <strong>libraries and SDKs</strong>, framework-dependent
+                    rungs are skipped — libraries must not depend on application frameworks at runtime. The ladder
+                    jumps from rung 1 directly to rung 3 (standard library).
+                </p>
+            </div>
+
+            <h3 id="behavioral-equivalence">2.3 Behavioral Equivalence Guarantee</h3>
+            <p>
+                The migrated code must produce <strong>identical observable behavior</strong> to the source.
+                This is the primary correctness criterion — not code similarity, not structural equivalence, but
+                behavioral equivalence.
+            </p>
+
+            <h4>Equivalence Requirements</h4>
+            <table>
+                <tr>
+                    <th>Property</th>
+                    <th>Requirement</th>
+                </tr>
+                <tr>
+                    <td>Input/Output</td>
+                    <td>Same inputs → same outputs (within type-system differences)</td>
+                </tr>
+                <tr>
+                    <td>Error conditions</td>
+                    <td>Same error conditions → equivalent error handling (mapped, not swallowed)</td>
+                </tr>
+                <tr>
+                    <td>Ordering guarantees</td>
+                    <td>If source was ordered, target must be ordered</td>
+                </tr>
+                <tr>
+                    <td>Concurrency properties</td>
+                    <td>If source was thread-safe, target must be thread-safe</td>
+                </tr>
+                <tr>
+                    <td>API contracts</td>
+                    <td>All public interfaces preserved or divergence explicitly recorded</td>
+                </tr>
+            </table>
+
+            <h4>Acceptable Divergences (Must Be Recorded)</h4>
+            <table>
+                <tr>
+                    <th>Divergence</th>
+                    <th>Classification</th>
+                </tr>
+                <tr>
+                    <td>Resource management differences (manual → platform-managed lifecycle)</td>
+                    <td><span class="status status-green">Expected</span></td>
+                </tr>
+                <tr>
+                    <td>Platform-specific code replaced with portable equivalents</td>
+                    <td><span class="status status-green">Expected</span></td>
+                </tr>
+                <tr>
+                    <td>Null/error safety improvements (weaker → stronger type safety)</td>
+                    <td><span class="status status-blue">Improvement</span></td>
+                </tr>
+                <tr>
+                    <td>Runtime performance characteristics (different memory model)</td>
+                    <td><span class="status status-green">Expected</span></td>
+                </tr>
+            </table>
+
+            <h4>Unacceptable Divergences (These Are Defects)</h4>
+            <div class="panel panel-error">
+                <p style="margin-bottom:8px">The following are treated as migration defects — they block module completion:</p>
+                <ul style="margin-bottom:0">
+                    <li>Silently dropping functionality</li>
+                    <li>Changing business logic without a decision record</li>
+                    <li>Swallowing errors that the source propagated</li>
+                    <li>Breaking API contracts that other code depends on</li>
+                    <li>Removing concurrency safety without analysis</li>
+                </ul>
+            </div>
+
+
+            <!-- SECTION 3: PROCESS PHASES -->
+            <h2 id="process-phases">3. Process Phases</h2>
+            <p>
+                The migration follows a strict phase-based workflow. Each module passes through the same
+                sequence of activities, with automated quality gates between phases. The process is
+                deterministic, resumable, and produces traceable artifacts at every step.
+            </p>
+
+            <h3>End-to-End Flow</h3>
+            <div class="flow-diagram">
+                <span class="flow-step">Init</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Detect</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Map</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Analyze</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Plan</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Execute</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Verify</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Review</span>
+            </div>
+            <p>
+                <strong>Initialization</strong> (Init → Detect → Map) runs once per project.
+                <strong>The module cycle</strong> (Analyze → Plan → Execute → Verify → Review) repeats for
+                each module in the dependency-ordered roadmap. Session interruptions are handled
+                by the <strong>Resume</strong> capability, which reads persistent state and re-enters at the correct point.
+            </p>
+
+            <!-- Phase 1: Init -->
+            <h3 id="phase-init">3.1 Initialization Phase</h3>
+            <div class="panel panel-info">
+                <div class="panel-title">Purpose</div>
+                <p style="margin-bottom:0">
+                    One-time project kickoff: scan the source codebase, build knowledge graphs for architectural
+                    understanding, detect technologies, gather architecture decisions, generate a dependency-ordered
+                    roadmap, and create the target project skeleton.
+                </p>
+            </div>
+
+            <table>
+                <tr>
+                    <th style="width:120px">Aspect</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td><strong>Duration</strong></td>
+                    <td>30 minutes – 2 hours (depending on codebase size)</td>
+                </tr>
+                <tr>
+                    <td><strong>Inputs</strong></td>
+                    <td>Source code root path, target technology configuration</td>
+                </tr>
+                <tr>
+                    <td><strong>Activities</strong></td>
+                    <td>
+                        <ol>
+                            <li>Parallel source scanning (4 agents: headers/interfaces, implementations, build files, tests)</li>
+                            <li>Knowledge graph extraction (structural + semantic analysis)</li>
+                            <li>Community detection and coupling hotspot analysis</li>
+                            <li>Technology detection and dependency mapping</li>
+                            <li>Interactive architecture decisions (output type, database, API style, auth, deployment)</li>
+                            <li>Source → target structural mapping</li>
+                            <li>Dependency-ordered roadmap generation (modules named by business domain)</li>
+                            <li>Target project skeleton generation (compilable from first commit)</li>
+                        </ol>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Outputs</strong></td>
+                    <td>
+                        <code>inventory.md</code>, <code>config.json</code>, <code>state.md</code>,
+                        <code>roadmap.md</code>, <code>decisions.md</code>, <code>mapping.md</code>,
+                        knowledge graphs, research documents (technology stack, dependency map, risk matrix),
+                        compilable target project skeleton with architecture tests
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Quality Gate</strong></td>
+                    <td>All source files inventoried; graphs generated; skeleton compiles; architecture tests pass; roadmap covers all files</td>
+                </tr>
+            </table>
+
+            <!-- Phase 2: Analyze -->
+            <h3 id="phase-analyze">3.2 Analysis Phase (Per Module)</h3>
+            <div class="panel panel-info">
+                <div class="panel-title">Purpose</div>
+                <p style="margin-bottom:0">
+                    Deep-analyze a specific module's source code from four parallel angles: data flow, design patterns,
+                    dependency graph, and risk assessment. Produces a comprehensive analysis consumed by the planning phase.
+                </p>
+            </div>
+
+            <table>
+                <tr>
+                    <th style="width:120px">Aspect</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td><strong>Parallelism</strong></td>
+                    <td>4 specialized analyzer agents run simultaneously on the same source</td>
+                </tr>
+                <tr>
+                    <td><strong>Analysis Dimensions</strong></td>
+                    <td>
+                        <table>
+                            <tr><th>Agent</th><th>Focus</th></tr>
+                            <tr><td>Data Flow Tracer</td><td>Ownership, lifetimes, data movement, shared state, resource management</td></tr>
+                            <tr><td>Pattern Detector</td><td>Design patterns, language idioms, error handling patterns</td></tr>
+                            <tr><td>Dependency Mapper</td><td>Call graph, interface surface, circular dependencies, external coupling</td></tr>
+                            <tr><td>Risk Assessor</td><td>Unsafe operations, platform-specific code, concurrency hazards, migration complexity</td></tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Outputs</strong></td>
+                    <td>Analysis document — 4 sections + synthesis (complexity score, top challenges, recommended strategy, effort estimate)</td>
+                </tr>
+                <tr>
+                    <td><strong>Quality Gate</strong></td>
+                    <td>All source files read; all 4 sections populated; every type/class documented; risks flagged with severity</td>
+                </tr>
+            </table>
+
+            <!-- Phase 3: Plan -->
+            <h3 id="phase-plan">3.3 Planning Phase (Per Module)</h3>
+            <div class="panel panel-info">
+                <div class="panel-title">Purpose</div>
+                <p style="margin-bottom:0">
+                    Generate executable, dependency-ordered translation plans organized into waves that follow
+                    the target architecture's layer structure. Each plan is a self-contained work unit.
+                </p>
+            </div>
+
+            <table>
+                <tr>
+                    <th style="width:120px">Aspect</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td><strong>Wave Strategy</strong></td>
+                    <td>
+                        Waves follow target architecture dependency direction (inside-out):<br>
+                        <code>domain/model → domain/port → domain/service → application → adapters-out → adapters-in → configuration</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Contents</strong></td>
+                    <td>
+                        Metadata (module, wave, source/target files, complexity, required tests) +
+                        body (objective, source analysis, translation table, dependency mapping, target structure,
+                        test strategy, verification criteria)
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Strategies</strong></td>
+                    <td>
+                        <strong>Conservative:</strong> maximize 1:1 mapping<br>
+                        <strong>Modern:</strong> leverage modern target language features aggressively<br>
+                        <strong>Hybrid (default):</strong> conservative for business logic, modern for infrastructure
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Quality Gate</strong></td>
+                    <td>Every source file mapped to at least one plan; wave ordering respects dependencies; human engineer confirms plan before execution</td>
+                </tr>
+            </table>
+
+            <!-- Phase 4: Execute -->
+            <h3 id="phase-execute">3.4 Execution Phase (Per Module)</h3>
+            <div class="panel panel-info">
+                <div class="panel-title">Purpose</div>
+                <p style="margin-bottom:0">
+                    Execute translation plans using wave-based parallel agents. Each wave completes and passes
+                    a build/test gate before the next wave begins. Failed gates trigger auto-fix or stop execution.
+                </p>
+            </div>
+
+            <table>
+                <tr>
+                    <th style="width:120px">Aspect</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td><strong>Parallelism</strong></td>
+                    <td>Plans within the same wave execute in parallel (no inter-dependencies within a wave)</td>
+                </tr>
+                <tr>
+                    <td><strong>Per-Wave Gate</strong></td>
+                    <td>
+                        <strong>BLOCKING</strong> — all must pass before next wave starts:
+                        <ul>
+                            <li>Full compilation (zero errors)</li>
+                            <li>All tests pass</li>
+                            <li>Architecture rules pass (layer enforcement)</li>
+                            <li>Coverage threshold met (if configured)</li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Failure Handling</strong></td>
+                    <td>Spawn fixer agent (max 2 attempts per failure). If still failing → STOP, report to human.</td>
+                </tr>
+                <tr>
+                    <td><strong>Commit Strategy</strong></td>
+                    <td>One atomic commit per plan with standardized message format for traceability</td>
+                </tr>
+                <tr>
+                    <td><strong>Quality Gate</strong></td>
+                    <td>All plans executed; every file compiles; every test passes; architecture tests pass; domain layer has zero framework imports</td>
+                </tr>
+            </table>
+
+            <!-- Phase 5: Verify -->
+            <h3 id="phase-verify">3.5 Verification Phase (Per Module)</h3>
+            <div class="panel panel-info">
+                <div class="panel-title">Purpose</div>
+                <p style="margin-bottom:0">
+                    Multi-dimensional verification gate: semantic equivalence (does the target do what the source did?),
+                    architecture quality (does it meet standards?), and graph-based drift detection (has the
+                    architecture shifted from the source?).
+                </p>
+            </div>
+
+            <table>
+                <tr>
+                    <th style="width:140px">Verification Stage</th>
+                    <th>What It Checks</th>
+                    <th>Pass Threshold</th>
+                </tr>
+                <tr>
+                    <td><strong>1. Semantic Equivalence</strong></td>
+                    <td>Method-level comparison, behavioral paths, edge cases, API contract preservation</td>
+                    <td>≥85% (fail) / ≥95% (clean pass)</td>
+                </tr>
+                <tr>
+                    <td><strong>2. Architecture Quality</strong></td>
+                    <td>Layer compliance, target platform standards, code quality metrics, test quality, minimalism audit</td>
+                    <td>≥80% (fail) / ≥90% (clean pass)</td>
+                </tr>
+                <tr>
+                    <td><strong>3. Graph-Based Verification</strong></td>
+                    <td>Source↔Target coverage, structural equivalence, coupling drift, layer validation</td>
+                    <td>≤25% drift (warn) / ≤10% (clean pass)</td>
+                </tr>
+            </table>
+
+            <div class="panel panel-success">
+                <div class="panel-title">Verification Outcome</div>
+                <p style="margin-bottom:0">
+                    <strong>PASS:</strong> Advance to review → <strong>PASS_WITH_NOTES:</strong> Show advisory to engineer →
+                    <strong>FAIL:</strong> List blocking issues, do NOT advance. All findings recorded in verification report.
+                </p>
+            </div>
+
+            <!-- Phase 6: Review -->
+            <h3 id="phase-review">3.6 Review Phase (Per Module)</h3>
+            <div class="panel panel-info">
+                <div class="panel-title">Purpose</div>
+                <p style="margin-bottom:0">
+                    Final quality gate with two specialized review passes. After approval, the module is tagged
+                    complete in version control. On the final module, ARC42 architecture documentation is generated automatically.
+                </p>
+            </div>
+
+            <table>
+                <tr>
+                    <th>Pass</th>
+                    <th>Focus</th>
+                    <th>Verdicts</th>
+                </tr>
+                <tr>
+                    <td><strong>Pass 1: Semantic Fidelity</strong></td>
+                    <td>Undocumented behavior changes, dropped functions, error path differences, concurrency preservation</td>
+                    <td>FAITHFUL / DRIFT_MINOR / DRIFT_MAJOR</td>
+                </tr>
+                <tr>
+                    <td><strong>Pass 2: Minimalism Audit</strong></td>
+                    <td>Dead code, re-implemented platform functionality, unnecessary abstractions, over-engineering</td>
+                    <td>APPROVED / OVER_ENGINEERED / UNNECESSARY / SIMPLIFIABLE</td>
+                </tr>
+            </table>
+
+            <h4>Resolution Paths</h4>
+            <table>
+                <tr>
+                    <th>Verdict</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td><span class="status status-green">APPROVED</span></td>
+                    <td>Tag in VCS, advance to next module</td>
+                </tr>
+                <tr>
+                    <td><span class="status status-yellow">NEEDS_FIXES</span></td>
+                    <td>Auto-fix or present to engineer, re-verify, re-review</td>
+                </tr>
+                <tr>
+                    <td><span class="status status-purple">BLOCKED</span></td>
+                    <td>DRIFT_MAJOR items require explicit resolution or decision record</td>
+                </tr>
+            </table>
+
+            <div class="panel panel-success">
+                <div class="panel-title">Final Module Completion</div>
+                <p style="margin-bottom:0">
+                    When the last module passes review, the system automatically generates <strong>full ARC42 architecture
+                    documentation</strong> (12 sections), runs a final knowledge graph comparison with source↔target
+                    analysis, and commits the documentation to the target project.
+                </p>
+            </div>
+
+
+            <!-- SECTION 4: ARCHITECTURE & TECHNICAL STANDARDS -->
+            <h2 id="architecture">4. Architecture & Technical Standards</h2>
+            <p>
+                The framework enforces an opinionated target architecture from the first line of generated code.
+                Architecture is not a recommendation — it is enforced by automated architecture tests that run
+                on every compilation. Violations are build failures, not review comments.
+            </p>
+
+            <h3>4.1 Target Architecture (Ports & Adapters / Hexagonal)</h3>
+            <p>
+                All service-type migrations land in a layered architecture with strict dependency direction.
+                The domain layer is <strong>pure business logic</strong> with zero framework imports.
+                Dependencies always point inward. This is enforced automatically.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Layer</th>
+                    <th>Contains</th>
+                    <th>Allowed Dependencies</th>
+                    <th>Forbidden</th>
+                </tr>
+                <tr>
+                    <td><strong>Domain</strong></td>
+                    <td>Entities, value objects, domain services, port interfaces</td>
+                    <td>Language standard library only</td>
+                    <td>Any framework, any external library</td>
+                </tr>
+                <tr>
+                    <td><strong>Application</strong></td>
+                    <td>Use cases (orchestration), DTOs, mappers</td>
+                    <td>Domain layer, transaction management</td>
+                    <td>Adapter layer, persistence entities</td>
+                </tr>
+                <tr>
+                    <td><strong>Adapter IN (Driving)</strong></td>
+                    <td>API controllers, CLI commands, message listeners, schedulers</td>
+                    <td>Domain ports (in), Application DTOs</td>
+                    <td>Domain services (implementations), Adapter OUT</td>
+                </tr>
+                <tr>
+                    <td><strong>Adapter OUT (Driven)</strong></td>
+                    <td>Repository implementations, HTTP clients, message publishers, file I/O</td>
+                    <td>Domain ports (out), persistence frameworks, external clients</td>
+                    <td>Adapter IN, Application use cases directly</td>
+                </tr>
+            </table>
+
+            <div class="panel panel-warning">
+                <div class="panel-title">Enforcement Mechanism</div>
+                <p style="margin-bottom:0">
+                    Architecture tests are generated during project initialization and run on every build.
+                    A domain class importing framework packages fails the build.
+                    An adapter accessing another adapter fails the build. This is not discoverable in code review —
+                    it is a hard compilation gate.
+                </p>
+            </div>
+
+            <h3 id="output-types">4.2 Output Type Profiles</h3>
+            <p>
+                Not every legacy codebase becomes a web service. The framework recognizes four
+                distinct output types and adapts architecture, dependencies, testing strategy, and build
+                configuration accordingly.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Output Type</th>
+                    <th>Source Was</th>
+                    <th>Target Becomes</th>
+                    <th>Key Characteristics</th>
+                </tr>
+                <tr>
+                    <td><strong>Service</strong></td>
+                    <td>Application with network/IPC listeners</td>
+                    <td>Modern web service (deployable)</td>
+                    <td>Hexagonal architecture, observability, health endpoints, API contracts</td>
+                </tr>
+                <tr>
+                    <td><strong>Library</strong></td>
+                    <td>Shared library / static lib / DLL</td>
+                    <td>Packaged library (no main, no framework)</td>
+                    <td>api/internal/spi layering, module boundaries, zero framework lock-in</td>
+                </tr>
+                <tr>
+                    <td><strong>SDK</strong></td>
+                    <td>Library with versioned public API</td>
+                    <td>Library + documentation + stability contracts + samples</td>
+                    <td>Stability annotations, binary compatibility checking, 100% documented API</td>
+                </tr>
+                <tr>
+                    <td><strong>CLI</strong></td>
+                    <td>Command-line tool</td>
+                    <td>Modern CLI with native compilation option</td>
+                    <td>stdout/stderr contracts, exit codes, fast startup, shell completions</td>
+                </tr>
+            </table>
+
+            <h3 id="standards-adaptation">4.3 Standards Adaptation Per Engagement</h3>
+            <p>
+                The methodology separates <strong>universal principles</strong> (which never change) from
+                <strong>technology-specific standards</strong> (which are configured per engagement). This allows
+                the same process to apply regardless of source/target technology.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Universal (Always Applies)</th>
+                    <th>Configured Per Engagement</th>
+                </tr>
+                <tr>
+                    <td>Five Iron Laws</td>
+                    <td>Source language and version</td>
+                </tr>
+                <tr>
+                    <td>Migration Ladder logic</td>
+                    <td>Target language, version, and framework</td>
+                </tr>
+                <tr>
+                    <td>Behavioral equivalence verification</td>
+                    <td>Target architecture pattern (hexagonal, clean, vertical slices)</td>
+                </tr>
+                <tr>
+                    <td>Wave-based execution (inside-out)</td>
+                    <td>Specific architecture test rules</td>
+                </tr>
+                <tr>
+                    <td>10 quality gates per module</td>
+                    <td>Test framework and coverage tools</td>
+                </tr>
+                <tr>
+                    <td>Decision records</td>
+                    <td>Build tool and dependency management</td>
+                </tr>
+                <tr>
+                    <td>Knowledge graph analysis</td>
+                    <td>Client naming conventions and domain terminology</td>
+                </tr>
+                <tr>
+                    <td>ARC42 documentation generation</td>
+                    <td>Deployment target and observability stack</td>
+                </tr>
+                <tr>
+                    <td>Two-pass review (fidelity + minimalism)</td>
+                    <td>Security model and auth patterns</td>
+                </tr>
+                <tr>
+                    <td>Audit trail (.migration/ directory)</td>
+                    <td>Client-specific code quality thresholds</td>
+                </tr>
+            </table>
+
+            <div class="panel panel-info">
+                <div class="panel-title">Technology Configuration Example</div>
+                <p style="margin-bottom:8px">At engagement start, the <code>config.json</code> captures technology choices:</p>
+                <pre><code>{
+  "source_language": "C++",
+  "source_version": "C++17",
+  "target_language": "Java",
+  "target_version": "25",
+  "target_framework": "Spring Boot 4.x",
+  "architecture": "hexagonal",
+  "output_type": "service",
+  "build_tool": "Gradle",
+  "test_framework": "JUnit 5 + AssertJ",
+  "architecture_tests": "ArchUnit",
+  "deployment": "Kubernetes"
+}</code></pre>
+                <p style="margin-bottom:0">
+                    All downstream tooling reads this configuration. The methodology process is identical
+                    regardless of what fills these fields.
+                </p>
+            </div>
+
+            <h3>4.4 Code Quality Constraints</h3>
+            <p>
+                Regardless of target language, universal quality constraints are enforced. Specific
+                thresholds may be adjusted per client, but the categories are always measured.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Default Limit</th>
+                    <th>Enforcement</th>
+                </tr>
+                <tr>
+                    <td>Cyclomatic complexity</td>
+                    <td>≤10 per function/method</td>
+                    <td>Static analysis + review gate</td>
+                </tr>
+                <tr>
+                    <td>File/class length</td>
+                    <td>≤200 LOC</td>
+                    <td>Review gate</td>
+                </tr>
+                <tr>
+                    <td>Function/method length</td>
+                    <td>≤30 LOC</td>
+                    <td>Review gate</td>
+                </tr>
+                <tr>
+                    <td>Dependency count (per component)</td>
+                    <td>≤4 injected dependencies</td>
+                    <td>Review gate (signals component does too much)</td>
+                </tr>
+                <tr>
+                    <td>Test coverage (business logic)</td>
+                    <td>95% line / 90% branch</td>
+                    <td>CI gate</td>
+                </tr>
+            </table>
+
+
+            <!-- SECTION 5: QUALITY ASSURANCE & AUTOMATION -->
+            <h2 id="quality-assurance">5. Quality Assurance & Automation</h2>
+            <p>
+                Quality is not a phase — it is enforced continuously through automated hooks, compilation
+                gates, architecture tests, and multi-dimensional verification. Human review is the last
+                line of defense, not the first.
+            </p>
+
+            <h3>5.1 Automated Quality Hooks</h3>
+            <p>
+                Hooks run automatically during development, catching violations at the moment of
+                introduction rather than during review.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Hook</th>
+                    <th>Trigger</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td><strong>Compile-on-save</strong></td>
+                    <td>Any target source file saved</td>
+                    <td>Runs incremental compilation immediately</td>
+                </tr>
+                <tr>
+                    <td><strong>Domain purity check</strong></td>
+                    <td>File created in domain layer</td>
+                    <td>Rejects framework imports — zero external dependencies in domain</td>
+                </tr>
+                <tr>
+                    <td><strong>Architecture direction check</strong></td>
+                    <td>File saved in adapter layer</td>
+                    <td>Validates dependency direction — adapters may only invoke port interfaces</td>
+                </tr>
+                <tr>
+                    <td><strong>Test companion reminder</strong></td>
+                    <td>Any new source file created</td>
+                    <td>Verifies corresponding test file exists</td>
+                </tr>
+            </table>
+
+            <h3>5.2 Quality Gates (10 Per Module)</h3>
+            <p>
+                Each module passes through 10 quality gates before it is marked complete. Gates are
+                <strong>blocking</strong> — a failed gate stops progression until resolved.
+            </p>
+
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>Gate</th>
+                    <th>When</th>
+                    <th>Threshold</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>Compilation</td>
+                    <td>After every wave</td>
+                    <td>Zero errors</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Unit tests pass</td>
+                    <td>After every wave</td>
+                    <td>100% green</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Architecture tests (layer compliance)</td>
+                    <td>After every wave</td>
+                    <td>Zero violations</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Coverage threshold</td>
+                    <td>After execution</td>
+                    <td>Configurable (default: 95%/90%)</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Semantic equivalence score</td>
+                    <td>Verification</td>
+                    <td>≥85% (pass) / ≥95% (clean)</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>Architecture quality score</td>
+                    <td>Verification</td>
+                    <td>≥80% (pass) / ≥90% (clean)</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>Graph coverage</td>
+                    <td>Verification</td>
+                    <td>≥75% source concepts covered</td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>Architecture drift</td>
+                    <td>Verification</td>
+                    <td>≤25% (warn) / ≤10% (clean)</td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>No DRIFT_MAJOR unresolved</td>
+                    <td>Review</td>
+                    <td>Zero remaining</td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td>Minimalism audit passed</td>
+                    <td>Review</td>
+                    <td>No OVER_ENGINEERED findings</td>
+                </tr>
+            </table>
+
+            <h3>5.3 Architecture Tests — Architecture as Code</h3>
+            <p>
+                Architecture tests are generated during project initialization and provide compile-time enforcement
+                of structural rules. They are output-type-aware and adapt per engagement.
+            </p>
+
+            <details>
+                <summary>Service Profile — Example Rules</summary>
+                <div class="detail-content">
+                    <ol>
+                        <li>Domain classes must not import framework packages</li>
+                        <li>Domain classes must not import persistence packages</li>
+                        <li>Ports must be interfaces (not classes)</li>
+                        <li>Domain layer depends on nothing outside domain</li>
+                        <li>Application layer must not import adapter packages</li>
+                        <li>Driving adapters only use port-in interfaces</li>
+                        <li>No field injection (constructor injection only)</li>
+                        <li>Use cases reside in application layer</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details>
+                <summary>Library/SDK Profile — Example Rules</summary>
+                <div class="detail-content">
+                    <ol>
+                        <li>Domain purity (no framework imports)</li>
+                        <li>Public API has no framework annotations</li>
+                        <li>Public API does not depend on internal packages</li>
+                        <li>No application framework bootstrap class</li>
+                        <li>No web/API controller classes</li>
+                        <li>Internal packages not exported through module system</li>
+                        <li>Extension point interfaces have default implementations</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details>
+                <summary>CLI Profile — Example Rules</summary>
+                <div class="detail-content">
+                    <ol>
+                        <li>Domain must not import framework packages</li>
+                        <li>Domain must not import CLI framework packages</li>
+                        <li>Dependencies point inward</li>
+                        <li>CLI adapter only uses port-in and DTOs</li>
+                        <li>No web controllers</li>
+                        <li>No application framework bootstrap</li>
+                    </ol>
+                </div>
+            </details>
+
+            <h3>5.4 Test-First Migration</h3>
+            <p>
+                Every translated file ships with tests that exercise the same paths as the source original.
+                The test porting follows systematic mappings — every source test pattern has a documented
+                target equivalent configured per engagement.
+            </p>
+
+            <div class="panel panel-info">
+                <div class="panel-title">Test Porting Principle</div>
+                <p style="margin-bottom:0">
+                    Source test structures are mapped systematically to target equivalents: fixtures → setup methods,
+                    parameterized tests → data-driven tests, mock expectations → mock verification,
+                    sections/contexts → nested test groups. The mapping is documented per engagement and
+                    applied consistently across all modules.
+                </p>
+            </div>
+
+            <h3>5.5 Test Pyramid</h3>
+            <table>
+                <tr>
+                    <th>Level</th>
+                    <th>Scope</th>
+                    <th>Speed</th>
+                </tr>
+                <tr>
+                    <td>Unit</td>
+                    <td>Domain + Application layer (pure logic, mocked dependencies)</td>
+                    <td>Milliseconds</td>
+                </tr>
+                <tr>
+                    <td>Integration (Slice)</td>
+                    <td>Individual adapters with real infrastructure (containers/mocks)</td>
+                    <td>Seconds</td>
+                </tr>
+                <tr>
+                    <td>End-to-End</td>
+                    <td>Full application context</td>
+                    <td>10-30 seconds</td>
+                </tr>
+                <tr>
+                    <td>Architecture</td>
+                    <td>Structural rules (layer enforcement)</td>
+                    <td>Milliseconds</td>
+                </tr>
+                <tr>
+                    <td>Contract</td>
+                    <td>API compatibility with consumers</td>
+                    <td>Seconds</td>
+                </tr>
+                <tr>
+                    <td>Behavioral (BDD)</td>
+                    <td>Business scenarios in client's language</td>
+                    <td>Seconds</td>
+                </tr>
+            </table>
+
+
+            <!-- SECTION 6: TOOLING & AI AGENT STRATEGY -->
+            <h2 id="tooling">6. Tooling & AI Agent Strategy</h2>
+            <p>
+                AI is used as a <strong>force multiplier under strict governance</strong>, not as an autonomous
+                decision-maker. The methodology deploys specialized AI agents for mechanical tasks (scanning,
+                translation, verification) while keeping architectural decisions, risk assessment, and
+                approval authority with human engineers.
+            </p>
+
+            <div class="panel panel-info">
+                <div class="panel-title">Design Philosophy</div>
+                <p style="margin-bottom:0">
+                    AI agents perform the <em>volume work</em> (reading thousands of files, translating code,
+                    checking equivalence) while humans perform the <em>judgment work</em> (architecture decisions,
+                    risk acceptance, plan approval). The framework constrains AI behavior through iron laws,
+                    quality gates, and strict output format requirements — AI cannot bypass these constraints.
+                </p>
+            </div>
+
+            <h3>6.1 Multi-Agent Architecture</h3>
+            <p>
+                Rather than using a single AI agent for everything, the framework deploys <strong>specialized
+                agents</strong> matched to each task's complexity and compute requirements.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Agent Role</th>
+                    <th>Model Tier</th>
+                    <th>Parallelism</th>
+                    <th>Purpose</th>
+                    <th>Constraints</th>
+                </tr>
+                <tr>
+                    <td><strong>Scanner</strong></td>
+                    <td>Fast/cheap</td>
+                    <td>×4 parallel</td>
+                    <td>File classification and inventory</td>
+                    <td>Read-only on source, write only to state directory</td>
+                </tr>
+                <tr>
+                    <td><strong>Detector</strong></td>
+                    <td>Standard</td>
+                    <td>×1</td>
+                    <td>Technology and dependency detection</td>
+                    <td>Must classify every dependency, provide target equivalent</td>
+                </tr>
+                <tr>
+                    <td><strong>Analyzer</strong></td>
+                    <td>Most-capable</td>
+                    <td>×4 parallel</td>
+                    <td>Deep code analysis (data flow, patterns, deps, risks)</td>
+                    <td>Must document every type/class, flag all risks with severity</td>
+                </tr>
+                <tr>
+                    <td><strong>Translator</strong></td>
+                    <td>Most-capable</td>
+                    <td>Per-wave parallel</td>
+                    <td>Code translation following plans</td>
+                    <td>Iron Laws enforced: read ALL source first, follow plan exactly, domain purity, every public function tested</td>
+                </tr>
+                <tr>
+                    <td><strong>Verifier</strong></td>
+                    <td>Most-capable</td>
+                    <td>×1</td>
+                    <td>Semantic equivalence checking</td>
+                    <td>Verdicts: EQUIVALENT / MINOR_DIFF / SEMANTIC_DRIFT</td>
+                </tr>
+                <tr>
+                    <td><strong>Reviewer</strong></td>
+                    <td>Most-capable</td>
+                    <td>×2 passes</td>
+                    <td>Fidelity review + minimalism audit</td>
+                    <td>Two separate passes with different objectives</td>
+                </tr>
+                <tr>
+                    <td><strong>Fixer</strong></td>
+                    <td>Standard</td>
+                    <td>×1</td>
+                    <td>Targeted repair of gate failures</td>
+                    <td>Max 2 attempts, cannot redesign, cannot change public API</td>
+                </tr>
+            </table>
+
+            <h3>6.2 Agent-Agnostic Framework</h3>
+            <p>
+                The methodology is not locked to any single AI coding tool. The same standards, workflows,
+                and quality hooks are delivered through thin adapters to whichever AI platform the engagement uses.
+                This ensures no vendor lock-in at the tooling level.
+            </p>
+
+            <div class="panel panel-success">
+                <div class="panel-title">One Source, Multiple Outputs</div>
+                <p style="margin-bottom:0">
+                    The knowledge base (standards, workflows, hooks) is maintained once in portable markdown.
+                    Agent-specific installers format this content for each platform's native conventions.
+                    Methodology updates propagate to all platforms simultaneously. Currently supported:
+                    Kiro, Claude Code, Codex — extensible to any agent with file-based configuration.
+                </p>
+            </div>
+
+            <h3 id="knowledge-graphs">6.3 Knowledge Graph Tooling</h3>
+            <p>
+                Two complementary knowledge graph tools provide deep codebase understanding. They run
+                automatically at defined points in the workflow — no manual invocation required.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Tool</th>
+                    <th>Role</th>
+                    <th>Unique Capabilities</th>
+                    <th>Integration Points</th>
+                </tr>
+                <tr>
+                    <td><strong>Graphify</strong></td>
+                    <td>Analytical backbone</td>
+                    <td>
+                        Community detection (Leiden algorithm), coupling hotspot analysis,
+                        edge confidence tiers, hidden dependency discovery, graph traversal queries
+                    </td>
+                    <td>
+                        Init (source graph), Execute (target graph), Verify (comparison), Review (ARC42)
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Understand-Anything</strong></td>
+                    <td>Human interface</td>
+                    <td>
+                        Interactive dashboard, guided tours (dependency-ordered), business domain extraction,
+                        onboarding guide generation, diff impact analysis
+                    </td>
+                    <td>
+                        Init (source understanding), on-demand throughout
+                    </td>
+                </tr>
+            </table>
+
+            <h4>How They Complement Each Other</h4>
+            <ul>
+                <li><strong>Graphify communities</strong> → inform module grouping (dependency-based boundaries)</li>
+                <li><strong>UA domain flows</strong> → inform module naming (business-meaningful, not technical)</li>
+                <li><strong>Graphify coupling hotspots</strong> → quantify migration risk per component</li>
+                <li><strong>UA layer classification</strong> → auto-assign source files to target architecture layers</li>
+                <li><strong>Both use AST extraction</strong> — structural analysis without LLM token cost</li>
+                <li><strong>Cross-referencing</strong> — disagreements between tools signal architectural concerns</li>
+            </ul>
+
+            <h4>Graph-Based Migration Tracking</h4>
+            <table>
+                <tr>
+                    <th>Mode</th>
+                    <th>Purpose</th>
+                    <th>Metrics Produced</th>
+                </tr>
+                <tr>
+                    <td><code>source</code></td>
+                    <td>Baseline architecture graph of legacy codebase</td>
+                    <td>Communities, coupling hotspots, module boundaries</td>
+                </tr>
+                <tr>
+                    <td><code>target</code></td>
+                    <td>Evolving architecture graph of modern target (incremental)</td>
+                    <td>New communities, layer validation, architecture compliance</td>
+                </tr>
+                <tr>
+                    <td><code>compare</code></td>
+                    <td>Source↔Target structural comparison</td>
+                    <td>Coverage %, drift %, lost/new connections, complexity delta</td>
+                </tr>
+                <tr>
+                    <td><code>arc42</code></td>
+                    <td>Generate architecture documentation from graph data</td>
+                    <td>12 ARC42 sections with diagrams, auto-populated</td>
+                </tr>
+            </table>
+
+
+            <!-- SECTION 7: RISK MANAGEMENT & MITIGATION -->
+            <h2 id="risk-management">7. Risk Management & Mitigation</h2>
+            <p>
+                Risk is not an afterthought — it is identified, quantified, and mitigated at every stage.
+                The methodology provides three interlocking risk management mechanisms:
+                upfront risk assessment, continuous decision tracking, and automated drift detection.
+            </p>
+
+            <h3>7.1 Risk Identification & Scoring</h3>
+            <p>
+                During initialization, the technology detection phase produces a formal risk matrix
+                scoring every identified risk using impact × likelihood.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Risk Category</th>
+                    <th>Examples</th>
+                    <th>Detection Method</th>
+                    <th>Mitigation Approach</th>
+                </tr>
+                <tr>
+                    <td><strong>Platform-specific code</strong></td>
+                    <td>OS-specific APIs, hardware interfaces, conditional compilation</td>
+                    <td>Pattern scanning, platform API detection</td>
+                    <td>Portable target equivalents identified; decision recorded</td>
+                </tr>
+                <tr>
+                    <td><strong>Unsafe operations</strong></td>
+                    <td>Manual memory management, unsafe casts, raw resource handles</td>
+                    <td>Risk assessor agent (pattern matching)</td>
+                    <td>Type-safe target replacements; lifecycle analysis ensures no leaks</td>
+                </tr>
+                <tr>
+                    <td><strong>Concurrency hazards</strong></td>
+                    <td>Shared mutable state, lock-free algorithms, custom synchronization</td>
+                    <td>Data flow analysis + concurrency pattern detection</td>
+                    <td>Modern concurrency primitives; safety properties preserved</td>
+                </tr>
+                <tr>
+                    <td><strong>No target equivalent</strong></td>
+                    <td>Platform-specific libraries, hardware drivers, assembly code</td>
+                    <td>Dependency mapping with confidence scoring</td>
+                    <td>Decision required: FFI bridge, alternative library, or feature removal (with record)</td>
+                </tr>
+                <tr>
+                    <td><strong>Coupling hotspots</strong></td>
+                    <td>Components referenced by >30% of codebase, circular dependencies</td>
+                    <td>Knowledge graph community detection + coupling analysis</td>
+                    <td>Decomposed during planning; interface extraction; prioritized in early waves</td>
+                </tr>
+                <tr>
+                    <td><strong>Metaprogramming / code generation</strong></td>
+                    <td>Macros, templates, reflection-heavy code, compile-time generation</td>
+                    <td>Pattern detection in analysis phase</td>
+                    <td>Manual review + explicit expansion; annotated for human attention</td>
+                </tr>
+            </table>
+
+            <h3>7.2 Decision Records (Architectural Traceability)</h3>
+            <p>
+                Every architectural divergence from 1:1 translation is recorded as a numbered, permanent
+                decision. This provides complete traceability for audits and ensures no silent redesigns.
+            </p>
+
+            <div class="panel panel-info">
+                <div class="panel-title">Decision Record Format</div>
+                <pre><code>## D-007: Replace async I/O library with target platform standard
+
+**Context:** Source uses third-party async I/O library. Target platform provides
+equivalent async capabilities natively, making the dependency unnecessary.
+
+**Decision:** Use target platform's standard async I/O instead of adding equivalent
+third-party library.
+
+**Consequences:** Simpler dependency graph. Platform-native concurrency model.
+No custom reactor pattern needed.
+
+**Migration Ladder Rung:** 3 (standard library covers it)</code></pre>
+            </div>
+
+            <p><strong>Rules governing decisions:</strong></p>
+            <ul>
+                <li>Numbered sequentially (D-001, D-002, …) — never reordered or deleted</li>
+                <li>Must reference the Migration Ladder rung that justifies the choice</li>
+                <li>Must state consequences (what changes for downstream code)</li>
+                <li>Created by any agent that encounters a non-obvious translation choice</li>
+                <li>Reviewed by human engineer during plan approval</li>
+            </ul>
+
+            <h3>7.3 Automated Drift Detection</h3>
+            <p>
+                Architecture drift is detected quantitatively through knowledge graph comparison,
+                not through subjective assessment.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Drift Metric</th>
+                    <th>What It Measures</th>
+                    <th>Threshold</th>
+                </tr>
+                <tr>
+                    <td>Coverage %</td>
+                    <td>% of source concepts that have a target equivalent</td>
+                    <td>≥75% (per module)</td>
+                </tr>
+                <tr>
+                    <td>Structural preservation</td>
+                    <td>Community count stability (±20% tolerance)</td>
+                    <td>No dramatic changes without justification</td>
+                </tr>
+                <tr>
+                    <td>Coupling drift</td>
+                    <td>New coupling hotspots in target that didn't exist in source</td>
+                    <td>Zero new hotspots (warning if any appear)</td>
+                </tr>
+                <tr>
+                    <td>Lost connections</td>
+                    <td>Relationships in source with no target equivalent</td>
+                    <td>Must be justified (dead code, or decision record)</td>
+                </tr>
+                <tr>
+                    <td>Layer violations</td>
+                    <td>Domain→adapter paths in target graph</td>
+                    <td>Zero (hard failure)</td>
+                </tr>
+            </table>
+
+            <h3>7.4 Failure Handling & Recovery</h3>
+            <table>
+                <tr>
+                    <th>Failure Scenario</th>
+                    <th>Automatic Response</th>
+                    <th>Escalation</th>
+                </tr>
+                <tr>
+                    <td>Compilation failure after wave</td>
+                    <td>Fixer agent (max 2 attempts)</td>
+                    <td>STOP execution, report to engineer</td>
+                </tr>
+                <tr>
+                    <td>Test failure</td>
+                    <td>Fixer analyzes and attempts targeted repair</td>
+                    <td>After 2 fails → BLOCKED, human intervention</td>
+                </tr>
+                <tr>
+                    <td>Semantic drift detected</td>
+                    <td>DRIFT_MAJOR finding with location</td>
+                    <td>Must be resolved or accepted via decision record</td>
+                </tr>
+                <tr>
+                    <td>Session interruption</td>
+                    <td>State persisted; stall detection after 10 min</td>
+                    <td>Resume re-enters at correct point with full context</td>
+                </tr>
+                <tr>
+                    <td>Uncertain translation</td>
+                    <td>Agent marks for human review</td>
+                    <td>Flagged in review pass for decision</td>
+                </tr>
+            </table>
+
+            <div class="panel panel-warning">
+                <div class="panel-title">Escalation Principle</div>
+                <p style="margin-bottom:0">
+                    The fixer agent has strict boundaries: max 2 attempts, cannot redesign,
+                    cannot change public API, cannot weaken tests. If automated repair fails, the system
+                    <strong>stops and reports</strong> rather than producing dubious code. We prefer blocking
+                    progress over producing incorrect output.
+                </p>
+            </div>
+
+
+            <!-- SECTION 8: DELIVERABLES & ARTIFACTS -->
+            <h2 id="deliverables">8. Deliverables & Artifacts</h2>
+            <p>
+                The methodology produces concrete, reviewable artifacts at every stage. Nothing is verbal,
+                nothing is assumed, everything is documented.
+            </p>
+
+            <h3>8.1 Per-Module Deliverables</h3>
+            <table>
+                <tr>
+                    <th>Phase</th>
+                    <th>Artifacts Produced</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td><strong>Initialization</strong></td>
+                    <td>
+                        inventory.md, config.json, state.md, roadmap.md, decisions.md, mapping.md,
+                        knowledge graphs (source/), research documents (tech stack, dependency map, risk matrix),
+                        compilable target project skeleton
+                    </td>
+                    <td>Complete project understanding, planning baseline, compilable starting point</td>
+                </tr>
+                <tr>
+                    <td><strong>Analysis</strong></td>
+                    <td>Analysis document (4 sections + synthesis with complexity scores)</td>
+                    <td>Deep understanding of specific module — data flow, patterns, dependencies, risks</td>
+                </tr>
+                <tr>
+                    <td><strong>Planning</strong></td>
+                    <td>Plan files (one per translation unit, with metadata + instructions)</td>
+                    <td>Executable, reviewable instructions — human approves before execution</td>
+                </tr>
+                <tr>
+                    <td><strong>Execution</strong></td>
+                    <td>Target source + test files, per-plan summaries, module summary, architecture graph snapshot, git commits</td>
+                    <td>The actual migrated code with tests and traceable history</td>
+                </tr>
+                <tr>
+                    <td><strong>Verification</strong></td>
+                    <td>Verification report (multi-score: semantic, architecture, graph-based)</td>
+                    <td>Proof of behavioral equivalence and architecture compliance</td>
+                </tr>
+                <tr>
+                    <td><strong>Review</strong></td>
+                    <td>VCS tag (module-complete), review findings</td>
+                    <td>Official completion marker in version history</td>
+                </tr>
+                <tr>
+                    <td><strong>Final Completion</strong></td>
+                    <td>ARC42 documentation (12 sections), final architecture graph comparison, interactive visualization</td>
+                    <td>Complete architecture documentation — generated, not hand-written</td>
+                </tr>
+            </table>
+
+            <h3>8.2 Automatic ARC42 Documentation</h3>
+            <p>
+                Upon final module completion, ARC42 v9.0 architecture documentation is generated automatically
+                from accumulated migration artifacts and knowledge graph data.
+            </p>
+
+            <table>
+                <tr>
+                    <th>ARC42 Section</th>
+                    <th>Data Source</th>
+                </tr>
+                <tr>
+                    <td>§1 Introduction & Goals</td>
+                    <td>config.json + decisions.md + roadmap.md</td>
+                </tr>
+                <tr>
+                    <td>§3 Context & Scope</td>
+                    <td>Graph external nodes + dependency map → context diagram</td>
+                </tr>
+                <tr>
+                    <td>§5 Building Block View</td>
+                    <td>Target graph communities (L1), nodes within communities (L2)</td>
+                </tr>
+                <tr>
+                    <td>§6 Runtime View</td>
+                    <td>Graph path queries → sequence diagrams</td>
+                </tr>
+                <tr>
+                    <td>§9 Architecture Decisions</td>
+                    <td>decisions.md reformatted as ADR entries</td>
+                </tr>
+                <tr>
+                    <td>§10 Quality Requirements</td>
+                    <td>Verification reports + architecture tests + coverage + graph metrics</td>
+                </tr>
+                <tr>
+                    <td>§11 Risks & Technical Debt</td>
+                    <td>tech-debt.md + coupling hotspots + drift report + risk matrix</td>
+                </tr>
+                <tr>
+                    <td>§12 Glossary</td>
+                    <td>Domain terms from source graph + mapping translations</td>
+                </tr>
+            </table>
+
+            <div class="panel panel-success">
+                <div class="panel-title">Documentation ROI</div>
+                <p style="margin-bottom:0">
+                    ARC42 documentation is generated from data already collected during migration.
+                    <strong>Zero additional documentation effort.</strong> This typically saves
+                    2-4 weeks of architect time. The documentation is always current because it derives
+                    from actual code analysis, not hand-written prose that drifts from reality.
+                </p>
+            </div>
+
+            <h3 id="audit-trail">8.3 Complete Audit Trail</h3>
+            <p>
+                The <code>.migration/</code> directory serves as a complete, inspectable audit trail.
+                Every decision, every analysis, every plan, and every verification result is preserved.
+            </p>
+
+            <pre><code>.migration/
+├── config.json              ← Project configuration (source/target tech, output type)
+├── state.md                 ← Current progress (module, wave, completion %)
+├── inventory.md             ← Every source file classified
+├── roadmap.md               ← Dependency-ordered modules
+├── decisions.md             ← All architectural decisions (permanent, numbered)
+├── mapping.md               ← Source → target structural map
+├── tech-debt.md             ← Intentional redesigns (not 1:1 ports)
+├── research/
+│   ├── legacy-stack.md      ← Source technology inventory
+│   ├── target-stack.md      ← Target technology selections
+│   ├── dependency-map.md    ← Source dep → target equivalent
+│   └── risk-matrix.md       ← Scored risk register
+├── phases/
+│   └── NN-slug/
+│       ├── analysis.md      ← Deep module analysis
+│       ├── plans/           ← Translation plans (per unit)
+│       ├── summaries/       ← Execution summaries
+│       └── verification.md  ← Verification scores
+├── graphs/
+│   ├── source/              ← Legacy architecture graph
+│   ├── target/              ← Modern target graph (evolving)
+│   └── comparison/          ← Drift reports
+└── arc42/                   ← Generated architecture documentation</code></pre>
+
+            <div class="panel panel-info">
+                <div class="panel-title">Governance & Compliance</div>
+                <p style="margin-bottom:0">
+                    This audit trail satisfies enterprise governance requirements: <strong>what</strong> was
+                    changed (inventory + plans), <strong>why</strong> it was changed (decisions.md), <strong>how</strong>
+                    it was verified (verification reports), and <strong>who</strong> approved it (VCS tags + review records).
+                    The entire .migration/ directory is committed to version control alongside the migrated code.
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--text-subtle); font-size: 12px;">
+                <p>
+                    <strong>Document:</strong> Legacy-to-Modern Migration Methodology<br>
+                    <strong>Owner:</strong> Valantic STI — Migration Practice<br>
+                    <strong>Classification:</strong> Internal / Client-Facing<br>
+                    <strong>Version:</strong> 3.0 — July 2026<br>
+                    <strong>Review cycle:</strong> Quarterly<br>
+                    <strong>Applicability:</strong> All legacy-to-modern migration engagements (language-agnostic)
+                </p>
+                <p style="margin-top: 12px; font-style: italic;">
+                    This document describes the standard engineering methodology used by Valantic STI
+                    for legacy-to-modern migration engagements. Technology-specific standards are configured
+                    per engagement while the process, principles, and quality gates remain constant.
+                </p>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href.startsWith('#')) {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                }
+            });
+        });
+        const sections = document.querySelectorAll('h2[id], h3[id]');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    document.querySelectorAll('.sidebar a').forEach(a => {
+                        a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+                    });
+                }
+            });
+        }, { rootMargin: '-20% 0px -60% 0px' });
+        sections.forEach(section => observer.observe(section));
+    </script>
+</body>
+</html>
