@@ -85,6 +85,8 @@ cpp-to-java-ai-framework/
 │   │   ├── test-porting-guide.md
 │   │   ├── translation-examples.md
 │   │   ├── migration-agents.md
+│   │   ├── arc42-generation-template.md
+│   │   ├── migration-state-files.md
 │   │   └── graphify-integration.md
 │   ├── skills/                 ← Workflow procedures
 │   │   ├── migrate-init.md
@@ -103,6 +105,7 @@ cpp-to-java-ai-framework/
 │   ├── claude/install.sh       ← Generates CLAUDE.md + .claude/settings.json
 │   ├── codex/install.sh        ← Copies AGENTS.md + docs/ + .codex/hooks.json
 │   └── parse-hooks.sh          ← Shared hook compiler (reads docs/hooks/, emits JSON)
+├── presentation/               ← Presentation assets
 ├── install.sh                  ← Interactive installer
 ├── AGENTS.md                   ← Full usage guide
 └── README.md
