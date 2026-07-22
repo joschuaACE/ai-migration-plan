@@ -91,12 +91,6 @@ map_trigger_codex() {
     map_trigger_claude "$1"
 }
 
-# Map portable type to agent-native type (Codex only supports command)
-map_type_codex() {
-    # Codex only supports command hooks — agent/prompt types get wrapped in a shell script
-    echo "command"
-}
-
 # Emit hook in the appropriate agent format
 emit_hook() {
     local matcher_resolved trigger_resolved command_resolved prompt_resolved
@@ -213,9 +207,17 @@ emit_codex() {
     if [ "$current_type" = "command" ]; then
         hook_json="{\"type\": \"command\", \"command\": $(json_string "$command_resolved"), \"statusMessage\": $(json_string "$current_desc")$([ -n "$current_timeout" ] && echo ", \"timeout\": $current_timeout")}"
     else
-        # Codex doesn't support prompt/agent — wrap in a bash command that just exits 0 with context
-        # The actual enforcement comes from AGENTS.md instructions for Codex
-        hook_json="{\"type\": \"command\", \"command\": \"echo '{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"$event\\\",\\\"additionalContext\\\":\\\"$(echo "$current_desc" | sed 's/"/\\\\"/g')\\\"}}'\", \"statusMessage\": $(json_string "$current_desc")}"
+        # Codex has no native prompt/agent hook. Emit a command hook that echoes a
+        # hookSpecificOutput payload. Escape at two levels so the result is robust:
+        #   1. shell  — single-quote the JSON payload (escaping embedded single quotes)
+        #              so spaces and double quotes survive when Codex runs the command
+        #   2. JSON   — run the whole command string through json_string so
+        #              .codex/hooks.json is always valid JSON
+        local ctx_json payload sq_payload
+        ctx_json="$(json_string "$current_desc")"
+        payload="{\"hookSpecificOutput\":{\"hookEventName\":\"$event\",\"additionalContext\":$ctx_json}}"
+        sq_payload="${payload//\'/\'\\\'\'}"
+        hook_json="{\"type\": \"command\", \"command\": $(json_string "echo '$sq_payload'"), \"statusMessage\": $(json_string "$current_desc")}"
     fi
 
     local entry
