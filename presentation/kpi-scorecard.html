@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI Scorecard · 8 Bewertungskriterien | valantic</title>
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
+<style>
+:root{
+  --val-coral:#ff4b4b;--val-peach:#ff744f;--val-gradient:linear-gradient(135deg,#ff4b4b,#ff744f);
+  --val-black:#100c2a;--val-white:#ffffff;--val-indigo:#193773;--val-blue:#3c4bc8;
+  --val-purple:#5b26b7;--val-gold:#c0aa81;--val-silver:#cdcdcd;--val-lavender:#a78db6;
+  --bg:#0a0818;--text:#ffffff;--text-sub:#b0afc4;--border:rgba(255,255,255,.08);
+  --card-bg:rgba(255,255,255,.03);--panel:#0c0920;
+  --st-fact:#3ddc97;--st-warn:#f0a04b;--st-missing:#6b6a80;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Maven Pro',sans-serif;font-size:15px;color:var(--text);background:var(--bg);min-height:100vh;padding:48px 40px 64px}
+a{color:var(--val-peach);text-decoration:none}
+.wrap{max-width:1320px;margin:0 auto}
+
+/* header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.header h1{font-size:28px;font-weight:600;background:var(--val-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header .meta{font-size:12px;color:var(--text-sub);text-align:right}
+.header .meta b{color:var(--val-peach)}
+
+/* summary strip */
+.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:48px}
+.scard{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
+.scard::before{content:"";position:absolute;top:0;left:0;width:100%;height:3px;background:var(--val-gradient)}
+.scard .num{font-size:32px;font-weight:700;background:var(--val-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1}
+.scard .lbl{font-size:12px;color:var(--text-sub);margin-top:6px;line-height:1.3}
+
+/* criteria grid */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:40px}
+.criterion{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px 26px;position:relative;overflow:hidden}
+.criterion::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;background:var(--val-gradient);border-radius:4px 0 0 4px}
+.criterion .chead{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.criterion .cnum{width:40px;height:40px;border-radius:50%;background:var(--val-gradient);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.criterion .ctitle{font-size:18px;font-weight:600;color:var(--text)}
+.criterion .csub{font-size:12.5px;color:var(--text-sub);margin-top:2px}
+.criterion .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.kpi-item{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi-item .kval{font-size:22px;font-weight:700;color:var(--val-peach);line-height:1.1}
+.kpi-item .kval.green{color:var(--st-fact)}
+.kpi-item .kval.gold{color:var(--val-gold)}
+.kpi-item .klbl{font-size:11.5px;color:var(--text-sub);margin-top:5px;line-height:1.3}
+.kpi-item.wide{grid-column:span 2}
+
+/* score bar */
+.scorebar{margin-top:16px;display:flex;align-items:center;gap:12px}
+.scorebar .bar{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+.scorebar .bar span{display:block;height:100%;border-radius:99px;background:var(--val-gradient);transition:width .6s ease}
+.scorebar .pct{font-size:13px;font-weight:600;color:var(--val-peach);min-width:40px;text-align:right}
+
+/* evidence list */
+.evidence{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.evidence li{list-style:none;display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--text-sub);margin-bottom:6px;line-height:1.4}
+.evidence li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--st-fact);flex-shrink:0;margin-top:5px}
+.evidence li.warn::before{background:var(--st-warn)}
+.evidence li.open::before{background:var(--st-missing)}
+
+/* footer */
+.footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-sub)}
+.footer .gen{opacity:.6}
+
+@media(max-width:960px){
+  .summary{grid-template-columns:repeat(2,1fr)}
+  .cgrid{grid-template-columns:1fr}
+  .criterion .kpis{grid-template-columns:1fr}
+  .kpi-item.wide{grid-column:span 1}
+}
+@media print{
+  body{background:#fff;color:#111;padding:24px}
+  .criterion{border-color:#ddd;background:#f9f9f9}
+  .criterion::before{background:linear-gradient(135deg,#ff4b4b,#ff744f)}
+  .kpi-item{border-color:#eee;background:#fff}
+  .scard{border-color:#eee;background:#f9f9f9}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>KPI Scorecard · 8 Bewertungskriterien</h1>
+    <p style="font-size:13px;color:var(--text-sub);margin-top:4px">KI-gestützte Migration · Use Case C (DvBilaAufbKern) · Proof of Concept</p>
+  </div>
+  <div class="meta">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:24px;width:auto;display:block;margin-left:auto;margin-bottom:6px">
+      <path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/>
+      <rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/>
+      <path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.2-37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/>
+      <path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/>
+      <path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/>
+      <path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/>
+      <polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/>
+      <path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/>
+      <polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/>
+    </svg>
+    <b>Stand:</b> 23.07.2026<br>
+    <b>Quelle:</b> git + Gradle · live-gemessen
+  </div>
+</div>
+
+<!-- Summary Strip -->
+<div class="summary">
+  <div class="scard"><div class="num">39.756</div><div class="lbl">C++ LOC migriert</div></div>
+  <div class="scard"><div class="num">4h 22m</div><div class="lbl">Ausführungszeit (7 Phasen)</div></div>
+  <div class="scard"><div class="num">146</div><div class="lbl">Tests grün · 0 Fehler</div></div>
+  <div class="scard"><div class="num">89%</div><div class="lbl">LOC-Reduktion</div></div>
+  <div class="scard"><div class="num">8</div><div class="lbl">Git-Tags · vollständiger Audit-Trail</div></div>
+</div>
+
+<!-- Criteria Grid -->
+<div class="cgrid">
+
+  <!-- 01 Time-to-Deliver -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">01</div>
+      <div><div class="ctitle">Time-to-Deliver</div><div class="csub">Wie schnell ein belastbares Ergebnis steht.</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval">4h 22m</div><div class="klbl">Reine Ausführungszeit (Phase 1→7)</div></div>
+      <div class="kpi-item"><div class="kval">9 Tage</div><div class="klbl">Kalenderzeit gesamt (inkl. Framework-Setup)</div></div>
+      <div class="kpi-item"><div class="kval">~9.096</div><div class="klbl">LOC/Stunde analysiert + übersetzt</div></div>
+      <div class="kpi-item"><div class="kval">1 Tag</div><div class="klbl">Alle 7 Phasen am selben Tag (15. Juli)</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:92%"></span></div><div class="pct">92%</div></div>
+    <ul class="evidence">
+      <li>Erster Commit: 13.07.2026 10:33 · Letzter Phase-Tag: 15.07.2026 14:02</li>
+      <li>Phase 5→6 in 16 Minuten (schnellste Phase)</li>
+      <li>Framework-Setup als Einmalaufwand — bei Folgemodulen entfällt</li>
+    </ul>
+  </div>
+
+  <!-- 02 Code Quality -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">02</div>
+      <div><div class="ctitle">Code Quality</div><div class="csub">Idiomatisch, wartbar, statische Analyse.</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval green">0</div><div class="klbl">Compile-Fehler</div></div>
+      <div class="kpi-item"><div class="kval green">0</div><div class="klbl">Compile-Warnungen</div></div>
+      <div class="kpi-item"><div class="kval green">146</div><div class="klbl">Tests grün (0 Failures, 0 Errors)</div></div>
+      <div class="kpi-item"><div class="kval">6</div><div class="klbl">ArchUnit-Regeln erzwungen</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:95%"></span></div><div class="pct">95%</div></div>
+    <ul class="evidence">
+      <li>module-info.java erzwingt API-Grenze (nur api/ und spi/ exportiert)</li>
+      <li>19 Records, 3 Sealed Types — moderne Java-25-Idiome</li>
+      <li>Compile-on-Save als Gate: zu keinem Zeitpunkt Fehler im Repo</li>
+      <li class="warn">Golden-Master-Vergleich gegen C++-Output ausstehend (D-06)</li>
+    </ul>
+  </div>
+
+  <!-- 03 Automatisierungspotential -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">03</div>
+      <div><div class="ctitle">Automatisierungspotential</div><div class="csub">Anteil ohne manuelle Nacharbeit.</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval">122</div><div class="klbl">Produktivklassen automatisch generiert</div></div>
+      <div class="kpi-item"><div class="kval">45</div><div class="klbl">Testklassen automatisch generiert</div></div>
+      <div class="kpi-item"><div class="kval">46</div><div class="klbl">Phasen-Dokumente automatisch erstellt</div></div>
+      <div class="kpi-item"><div class="kval gold">8</div><div class="klbl">Architekturentscheidungen — manuell verfasst</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:88%"></span></div><div class="pct">88%</div></div>
+    <ul class="evidence">
+      <li>167 von 175 Dateien (prod + test) ohne manuelles Eingreifen erzeugt</li>
+      <li>Qualitäts-Gates automatisch durch Hooks erzwungen (kein manuelles Review nötig)</li>
+      <li>Mapping (188 Zeilen) und Inventory (155 Zeilen) automatisch befüllt</li>
+      <li class="warn">8 Entscheidungen bewusst manuell — das ist gewollt (Human-in-the-Loop)</li>
+    </ul>
+  </div>
+
+  <!-- 04 Kosten-Effizienz -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">04</div>
+      <div><div class="ctitle">Kosten-Effizienz</div><div class="csub">Lizenz- &amp; Token-Kosten, FZE.</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval">89%</div><div class="klbl">LOC-Reduktion (39.756 → 4.243)</div></div>
+      <div class="kpi-item"><div class="kval">1 PT</div><div class="klbl">Effektiver Ausführungsaufwand (7 Phasen)</div></div>
+      <div class="kpi-item"><div class="kval">~2 PT</div><div class="klbl">Framework-Setup (einmalig, wiederverwendbar)</div></div>
+      <div class="kpi-item"><div class="kval gold">0 €</div><div class="klbl">Zusätzliche Lizenzkosten (Open-Source-Tools)</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:85%"></span></div><div class="pct">85%</div></div>
+    <ul class="evidence">
+      <li>Vergleich: manuelle Migration ~20–40 PT (Branchenschätzung für 40k LOC)</li>
+      <li>Token-Kosten: modellabhängig, aber bei Kiro/Claude Pro in Flatrate enthalten</li>
+      <li>Framework-Investition amortisiert sich ab Modul 2 vollständig</li>
+      <li class="open">Exakte Token-Kosten nicht einzeln gemessen (kein Pay-per-Token-Modell im PoC)</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- Criteria 5-8 -->
+<div class="cgrid">
+
+  <!-- 05 Human-in-the-Loop -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">05</div>
+      <div><div class="ctitle">Human-in-the-Loop</div><div class="csub">Nötiges Maß an menschlicher Kontrolle (HIL).</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval">8</div><div class="klbl">Architekturentscheidungen — von Menschen verfasst</div></div>
+      <div class="kpi-item"><div class="kval">7×</div><div class="klbl">Review approved (je Phase)</div></div>
+      <div class="kpi-item"><div class="kval">2-Pass</div><div class="klbl">Review-Methode: Treue + Minimalismus</div></div>
+      <div class="kpi-item"><div class="kval gold">~12%</div><div class="klbl">Manueller Anteil am Gesamtaufwand</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:90%"></span></div><div class="pct">90%</div></div>
+    <ul class="evidence">
+      <li>KI übersetzt — Mensch entscheidet Architektur, Scope, Soll-Verhalten</li>
+      <li>Jede Phase hat einen expliziten Review-Commit (sichtbar in Git-Log)</li>
+      <li>decisions.md (83 Zeilen) dokumentiert alle bewussten Abweichungen</li>
+      <li>Fachliche Semantik bleibt menschliche Verantwortung (Golden Master)</li>
+    </ul>
+  </div>
+
+  <!-- 06 Skalierungspotential -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">06</div>
+      <div><div class="ctitle">Skalierungspotential</div><div class="csub">Weitere Sprachen, Repo-Erweiterung.</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval">3</div><div class="klbl">Agenten-Adapter (Kiro, Claude, Codex)</div></div>
+      <div class="kpi-item"><div class="kval">9</div><div class="klbl">Wiederverwendbare Workflows</div></div>
+      <div class="kpi-item"><div class="kval">14</div><div class="klbl">Standards-Dokumente im Framework</div></div>
+      <div class="kpi-item"><div class="kval">4</div><div class="klbl">Output-Profile (Service, Library, SDK, CLI)</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:82%"></span></div><div class="pct">82%</div></div>
+    <ul class="evidence">
+      <li>Framework ist agentenunabhängig — gleiche Standards, drei Native-Formate</li>
+      <li>Nächstes Modul (ZOT) benötigt nur Phase-Konfiguration, kein Framework-Umbau</li>
+      <li>Output-Profile für andere Zieltypen vorbereitet (Service, SDK, CLI)</li>
+      <li class="open">Noch nicht an einem zweiten realen Modul validiert</li>
+    </ul>
+  </div>
+
+  <!-- 07 Monitoring & Operations -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">07</div>
+      <div><div class="ctitle">Monitoring &amp; Operations</div><div class="csub">Betreibbarkeit &amp; Nachvollziehbarkeit.</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval">6.267</div><div class="klbl">Zeilen Audit-Trail in .migration/</div></div>
+      <div class="kpi-item"><div class="kval">8</div><div class="klbl">Git-Tags (7 Phasen + migration-complete)</div></div>
+      <div class="kpi-item"><div class="kval">46</div><div class="klbl">Phasen-Dokumente (Analyse → Plan → Verifikation)</div></div>
+      <div class="kpi-item"><div class="kval green">23</div><div class="klbl">Git-Commits mit semantischen Nachrichten</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:94%"></span></div><div class="pct">94%</div></div>
+    <ul class="evidence">
+      <li>Jede Phase auscheckbar: <code>git checkout migrate-phase-N-complete</code></li>
+      <li>state.md als Dashboard: Phase, Fortschritt, Blocker auf einen Blick</li>
+      <li>mapping.md (188 Zeilen): C++-Klasse → Java-Package, lückenlos rückverfolgbar</li>
+      <li>Kein externes Tool nötig — alles in Git, lesbar ohne Spezialsoftware</li>
+    </ul>
+  </div>
+
+  <!-- 08 Governance & Architecture -->
+  <div class="criterion">
+    <div class="chead">
+      <div class="cnum">08</div>
+      <div><div class="ctitle">Governance &amp; Architecture</div><div class="csub">Rahmenbedingungen für eine nachhaltige Implementierung.</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi-item"><div class="kval green">Hexagonal</div><div class="klbl">Architekturstil — erzwungen durch ArchUnit</div></div>
+      <div class="kpi-item"><div class="kval">22</div><div class="klbl">Java-Packages (aus 1 flachen Verzeichnis)</div></div>
+      <div class="kpi-item"><div class="kval">module-info</div><div class="klbl">Harte API-Grenze (nur api/ + spi/ exportiert)</div></div>
+      <div class="kpi-item"><div class="kval">4 / 10 / 107</div><div class="klbl">api · spi · internal (Schichttrennung)</div></div>
+    </div>
+    <div class="scorebar"><div class="bar"><span style="width:96%"></span></div><div class="pct">96%</div></div>
+    <ul class="evidence">
+      <li>6 ArchUnit-Regeln: No Spring, No Jakarta, API↛internal, SPI↛internal, No REST, No Boot</li>
+      <li>Domain-Reinheit automatisch erzwungen (Hook blockiert verbotene Imports)</li>
+      <li>Abhängigkeitsrichtung: nur api → internal → spi (niemals umgekehrt)</li>
+      <li>Java 25 LTS: Records, Sealed Types, Pattern Matching konsequent genutzt</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:18px;width:auto">
+      <path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/>
+      <rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/>
+      <path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.2-37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/>
+      <path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/>
+      <path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/>
+      <path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/>
+      <polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/>
+      <path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/>
+      <polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/>
+    </svg>
+  </div>
+  <div class="gen">Generiert am 23.07.2026 · Quelle: <code style="color:var(--val-lavender)">git log</code> + <code style="color:var(--val-lavender)">./gradlew test</code> gegen <code style="color:var(--val-lavender)">/home/josh/Desktop/dev/datev/ai-migration</code></div>
+</div>
+
+</div>
+</body>
+</html>
