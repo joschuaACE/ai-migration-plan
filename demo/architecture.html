@@ -72,6 +72,7 @@ flowchart TB
     subgraph AGENTS["🔧 agents/ — Installer Layer"]
         direction LR
         PARSE["parse-hooks.sh<br/>Shared hook compiler<br/>(reads hooks/ → emits JSON)"]
+        COPILOT_INST["copilot/install.sh<br/>Generates .github/"]
         KIRO_INST["kiro/install.sh<br/>Generates .kiro/"]
         CLAUDE_INST["claude/install.sh<br/>Generates CLAUDE.md"]
         CODEX_INST["codex/install.sh<br/>Generates AGENTS.md"]
@@ -79,6 +80,10 @@ flowchart TB
 
     subgraph TARGETS["🎯 Target Project Outputs"]
         direction LR
+        subgraph COPILOT_OUT["Copilot Agent"]
+            CP1[".github/copilot-instructions.md"]
+            CP2[".github/prompts/"]
+        end
         subgraph KIRO_OUT["Kiro Agent"]
             K1[".kiro/steering/"]
             K2[".kiro/skills/"]
@@ -94,16 +99,20 @@ flowchart TB
         end
     end
 
+    STANDARDS --> COPILOT_INST
     STANDARDS --> KIRO_INST
     STANDARDS --> CLAUDE_INST
     STANDARDS --> CODEX_INST
+    SKILLS --> COPILOT_INST
     SKILLS --> KIRO_INST
     SKILLS --> CLAUDE_INST
     SKILLS --> CODEX_INST
     HOOKS --> PARSE
+    PARSE --> COPILOT_INST
     PARSE --> KIRO_INST
     PARSE --> CLAUDE_INST
     PARSE --> CODEX_INST
+    COPILOT_INST --> COPILOT_OUT
     KIRO_INST --> KIRO_OUT
     CLAUDE_INST --> CLAUDE_OUT
     CODEX_INST --> CODEX_OUT
