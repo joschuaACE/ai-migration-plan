@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KPI Scorecard · 8 Bewertungskriterien | AI Migration Framework</title>
+<title>KPI Scorecard · 5 Evaluation Criteria | AI Migration Framework</title>
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
 <style>
@@ -87,23 +87,23 @@ a{color:var(--accent-light);text-decoration:none}
 <!-- Header -->
 <div class="header">
   <div>
-    <h1>KPI Scorecard · 8 Bewertungskriterien</h1>
-    <p style="font-size:13px;color:var(--text-sub);margin-top:4px">KI-gestützte Migration · Use Case C (DvBilaAufbKern) · Proof of Concept</p>
+    <h1>KPI Scorecard · 5 Evaluation Criteria</h1>
+    <p style="font-size:13px;color:var(--text-sub);margin-top:4px">AI-Assisted Migration · Use Case C (DvBilaAufbKern) · Proof of Concept</p>
   </div>
   <div class="meta">
     <span style="font-size:16px;font-weight:600;display:block;margin-bottom:6px;color:#fff">AI Migration Framework</span>
-    <b>Stand:</b> 23.07.2026<br>
-    <b>Quelle:</b> git + Gradle · live-gemessen
+    <b>Date:</b> 23.07.2026<br>
+    <b>Source:</b> git + Gradle · live measured
   </div>
 </div>
 
 <!-- Summary Strip -->
 <div class="summary">
-  <div class="scard"><div class="num">39.756</div><div class="lbl">C++ LOC migriert</div></div>
-  <div class="scard"><div class="num">4h 22m</div><div class="lbl">Ausführungszeit (7 Phasen)</div></div>
-  <div class="scard"><div class="num">146</div><div class="lbl">Tests grün · 0 Fehler</div></div>
-  <div class="scard"><div class="num">89%</div><div class="lbl">LOC-Reduktion</div></div>
-  <div class="scard"><div class="num">8</div><div class="lbl">Git-Tags · vollständiger Audit-Trail</div></div>
+  <div class="scard"><div class="num">39,756</div><div class="lbl">C++ LOC migrated</div></div>
+  <div class="scard"><div class="num">4h 22m</div><div class="lbl">Execution time (7 phases)</div></div>
+  <div class="scard"><div class="num">146</div><div class="lbl">Tests green · 0 failures</div></div>
+  <div class="scard"><div class="num">89%</div><div class="lbl">LOC reduction</div></div>
+  <div class="scard"><div class="num">8</div><div class="lbl">Git tags · complete audit trail</div></div>
 </div>
 
 <!-- Criteria Grid -->
@@ -113,19 +113,19 @@ a{color:var(--accent-light);text-decoration:none}
   <div class="criterion">
     <div class="chead">
       <div class="cnum">01</div>
-      <div><div class="ctitle">Time-to-Deliver</div><div class="csub">Wie schnell ein belastbares Ergebnis steht.</div></div>
+      <div><div class="ctitle">Time-to-Deliver</div><div class="csub">How quickly a reliable result is achieved.</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi-item"><div class="kval">4h 22m</div><div class="klbl">Reine Ausführungszeit (Phase 1→7)</div></div>
-      <div class="kpi-item"><div class="kval">9 Tage</div><div class="klbl">Kalenderzeit gesamt (inkl. Framework-Setup)</div></div>
-      <div class="kpi-item"><div class="kval">~9.096</div><div class="klbl">LOC/Stunde analysiert + übersetzt</div></div>
-      <div class="kpi-item"><div class="kval">1 Tag</div><div class="klbl">Alle 7 Phasen am selben Tag (15. Juli)</div></div>
+      <div class="kpi-item"><div class="kval">4h 22m</div><div class="klbl">Pure execution time (Phase 1→7)</div></div>
+      <div class="kpi-item"><div class="kval">9 days</div><div class="klbl">Total calendar time (incl. framework setup)</div></div>
+      <div class="kpi-item"><div class="kval">~9,096</div><div class="klbl">LOC/hour analyzed + translated</div></div>
+      <div class="kpi-item"><div class="kval">1 day</div><div class="klbl">All 7 phases on same day (July 15)</div></div>
     </div>
     <div class="scorebar"><div class="bar"><span style="width:92%"></span></div><div class="pct">92%</div></div>
     <ul class="evidence">
-      <li>Erster Commit: 13.07.2026 10:33 · Letzter Phase-Tag: 15.07.2026 14:02</li>
-      <li>Phase 5→6 in 16 Minuten (schnellste Phase)</li>
-      <li>Framework-Setup als Einmalaufwand — bei Folgemodulen entfällt</li>
+      <li>First commit: 13.07.2026 10:33 · Last phase tag: 15.07.2026 14:02</li>
+      <li>Phase 5→6 in 16 minutes (fastest phase)</li>
+      <li>Framework setup is one-time effort — eliminated for subsequent modules</li>
     </ul>
   </div>
 
@@ -133,151 +133,83 @@ a{color:var(--accent-light);text-decoration:none}
   <div class="criterion">
     <div class="chead">
       <div class="cnum">02</div>
-      <div><div class="ctitle">Code Quality</div><div class="csub">Idiomatisch, wartbar, statische Analyse.</div></div>
+      <div><div class="ctitle">Code Quality</div><div class="csub">Idiomatic, maintainable, static analysis.</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi-item"><div class="kval green">0</div><div class="klbl">Compile-Fehler</div></div>
-      <div class="kpi-item"><div class="kval green">0</div><div class="klbl">Compile-Warnungen</div></div>
-      <div class="kpi-item"><div class="kval green">146</div><div class="klbl">Tests grün (0 Failures, 0 Errors)</div></div>
-      <div class="kpi-item"><div class="kval">6</div><div class="klbl">ArchUnit-Regeln erzwungen</div></div>
+      <div class="kpi-item"><div class="kval green">0</div><div class="klbl">Compile errors</div></div>
+      <div class="kpi-item"><div class="kval green">0</div><div class="klbl">Compile warnings</div></div>
+      <div class="kpi-item"><div class="kval green">146</div><div class="klbl">Tests green (0 failures, 0 errors)</div></div>
+      <div class="kpi-item"><div class="kval">6</div><div class="klbl">ArchUnit rules enforced</div></div>
     </div>
     <div class="scorebar"><div class="bar"><span style="width:95%"></span></div><div class="pct">95%</div></div>
     <ul class="evidence">
-      <li>module-info.java erzwingt API-Grenze (nur api/ und spi/ exportiert)</li>
-      <li>19 Records, 3 Sealed Types — moderne Java-25-Idiome</li>
-      <li>Compile-on-Save als Gate: zu keinem Zeitpunkt Fehler im Repo</li>
-      <li class="warn">Golden-Master-Vergleich gegen C++-Output ausstehend (D-06)</li>
+      <li>module-info.java enforces API boundary (only api/ and spi/ exported)</li>
+      <li>19 Records, 3 Sealed Types — modern Java 25 idioms</li>
+      <li>Compile-on-Save as gate: no errors in repo at any point</li>
+      <li class="warn">Golden master comparison against C++ output pending (D-06)</li>
     </ul>
   </div>
 
-  <!-- 03 Automatisierungspotential -->
+  <!-- 03 Automation Potential -->
   <div class="criterion">
     <div class="chead">
       <div class="cnum">03</div>
-      <div><div class="ctitle">Automatisierungspotential</div><div class="csub">Anteil ohne manuelle Nacharbeit.</div></div>
+      <div><div class="ctitle">Automation Potential</div><div class="csub">Percentage without manual rework.</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi-item"><div class="kval">122</div><div class="klbl">Produktivklassen automatisch generiert</div></div>
-      <div class="kpi-item"><div class="kval">45</div><div class="klbl">Testklassen automatisch generiert</div></div>
-      <div class="kpi-item"><div class="kval">46</div><div class="klbl">Phasen-Dokumente automatisch erstellt</div></div>
-      <div class="kpi-item"><div class="kval gold">8</div><div class="klbl">Architekturentscheidungen — manuell verfasst</div></div>
+      <div class="kpi-item"><div class="kval">122</div><div class="klbl">Production classes auto-generated</div></div>
+      <div class="kpi-item"><div class="kval">45</div><div class="klbl">Test classes auto-generated</div></div>
+      <div class="kpi-item"><div class="kval">46</div><div class="klbl">Phase documents auto-created</div></div>
+      <div class="kpi-item"><div class="kval gold">8</div><div class="klbl">Architecture decisions — manually authored</div></div>
     </div>
     <div class="scorebar"><div class="bar"><span style="width:88%"></span></div><div class="pct">88%</div></div>
     <ul class="evidence">
-      <li>167 von 175 Dateien (prod + test) ohne manuelles Eingreifen erzeugt</li>
-      <li>Qualitäts-Gates automatisch durch Hooks erzwungen (kein manuelles Review nötig)</li>
-      <li>Mapping (188 Zeilen) und Inventory (155 Zeilen) automatisch befüllt</li>
-      <li class="warn">8 Entscheidungen bewusst manuell — das ist gewollt (Human-in-the-Loop)</li>
+      <li>167 of 175 files (prod + test) generated without manual intervention</li>
+      <li>Quality gates automatically enforced by hooks (no manual review needed)</li>
+      <li>Mapping (188 lines) and Inventory (155 lines) auto-populated</li>
+      <li class="warn">8 decisions intentionally manual — by design (Human-in-the-Loop)</li>
     </ul>
   </div>
 
-  <!-- 04 Kosten-Effizienz -->
+  <!-- 04 Human-in-the-Loop -->
   <div class="criterion">
     <div class="chead">
       <div class="cnum">04</div>
-      <div><div class="ctitle">Kosten-Effizienz</div><div class="csub">Lizenz- &amp; Token-Kosten, FZE.</div></div>
+      <div><div class="ctitle">Human-in-the-Loop</div><div class="csub">Required level of human oversight (HIL).</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi-item"><div class="kval">89%</div><div class="klbl">LOC-Reduktion (39.756 → 4.243)</div></div>
-      <div class="kpi-item"><div class="kval">1 PT</div><div class="klbl">Effektiver Ausführungsaufwand (7 Phasen)</div></div>
-      <div class="kpi-item"><div class="kval">~2 PT</div><div class="klbl">Framework-Setup (einmalig, wiederverwendbar)</div></div>
-      <div class="kpi-item"><div class="kval gold">0 €</div><div class="klbl">Zusätzliche Lizenzkosten (Open-Source-Tools)</div></div>
-    </div>
-    <div class="scorebar"><div class="bar"><span style="width:85%"></span></div><div class="pct">85%</div></div>
-    <ul class="evidence">
-      <li>Vergleich: manuelle Migration ~20–40 PT (Branchenschätzung für 40k LOC)</li>
-      <li>Token-Kosten: modellabhängig, aber bei Kiro/Claude Pro in Flatrate enthalten</li>
-      <li>Framework-Investition amortisiert sich ab Modul 2 vollständig</li>
-      <li class="open">Exakte Token-Kosten nicht einzeln gemessen (kein Pay-per-Token-Modell im PoC)</li>
-    </ul>
-  </div>
-
-</div>
-
-<!-- Criteria 5-8 -->
-<div class="cgrid">
-
-  <!-- 05 Human-in-the-Loop -->
-  <div class="criterion">
-    <div class="chead">
-      <div class="cnum">05</div>
-      <div><div class="ctitle">Human-in-the-Loop</div><div class="csub">Nötiges Maß an menschlicher Kontrolle (HIL).</div></div>
-    </div>
-    <div class="kpis">
-      <div class="kpi-item"><div class="kval">8</div><div class="klbl">Architekturentscheidungen — von Menschen verfasst</div></div>
-      <div class="kpi-item"><div class="kval">7×</div><div class="klbl">Review approved (je Phase)</div></div>
-      <div class="kpi-item"><div class="kval">2-Pass</div><div class="klbl">Review-Methode: Treue + Minimalismus</div></div>
-      <div class="kpi-item"><div class="kval gold">~12%</div><div class="klbl">Manueller Anteil am Gesamtaufwand</div></div>
+      <div class="kpi-item"><div class="kval">8</div><div class="klbl">Architecture decisions — authored by humans</div></div>
+      <div class="kpi-item"><div class="kval">7×</div><div class="klbl">Review approved (per phase)</div></div>
+      <div class="kpi-item"><div class="kval">2-Pass</div><div class="klbl">Review method: Fidelity + Minimalism</div></div>
+      <div class="kpi-item"><div class="kval gold">~12%</div><div class="klbl">Manual share of total effort</div></div>
     </div>
     <div class="scorebar"><div class="bar"><span style="width:90%"></span></div><div class="pct">90%</div></div>
     <ul class="evidence">
-      <li>KI übersetzt — Mensch entscheidet Architektur, Scope, Soll-Verhalten</li>
-      <li>Jede Phase hat einen expliziten Review-Commit (sichtbar in Git-Log)</li>
-      <li>decisions.md (83 Zeilen) dokumentiert alle bewussten Abweichungen</li>
-      <li>Fachliche Semantik bleibt menschliche Verantwortung (Golden Master)</li>
+      <li>AI translates — humans decide architecture, scope, expected behavior</li>
+      <li>Each phase has an explicit review commit (visible in Git log)</li>
+      <li>decisions.md (83 lines) documents all intentional deviations</li>
+      <li>Business semantics remain human responsibility (Golden Master)</li>
     </ul>
   </div>
 
-  <!-- 06 Skalierungspotential -->
+  <!-- 05 Scalability Potential -->
   <div class="criterion">
     <div class="chead">
-      <div class="cnum">06</div>
-      <div><div class="ctitle">Skalierungspotential</div><div class="csub">Weitere Sprachen, Repo-Erweiterung.</div></div>
+      <div class="cnum">05</div>
+      <div><div class="ctitle">Scalability Potential</div><div class="csub">Additional languages, repo expansion.</div></div>
     </div>
     <div class="kpis">
-      <div class="kpi-item"><div class="kval">3</div><div class="klbl">Agenten-Adapter (Kiro, Claude, Codex)</div></div>
-      <div class="kpi-item"><div class="kval">9</div><div class="klbl">Wiederverwendbare Workflows</div></div>
-      <div class="kpi-item"><div class="kval">14</div><div class="klbl">Standards-Dokumente im Framework</div></div>
-      <div class="kpi-item"><div class="kval">4</div><div class="klbl">Output-Profile (Service, Library, SDK, CLI)</div></div>
+      <div class="kpi-item"><div class="kval">3</div><div class="klbl">Agent adapters (Kiro, Claude, Codex)</div></div>
+      <div class="kpi-item"><div class="kval">9</div><div class="klbl">Reusable workflows</div></div>
+      <div class="kpi-item"><div class="kval">14</div><div class="klbl">Standards documents in framework</div></div>
+      <div class="kpi-item"><div class="kval">4</div><div class="klbl">Output profiles (Service, Library, SDK, CLI)</div></div>
     </div>
     <div class="scorebar"><div class="bar"><span style="width:82%"></span></div><div class="pct">82%</div></div>
     <ul class="evidence">
-      <li>Framework ist agentenunabhängig — gleiche Standards, drei Native-Formate</li>
-      <li>Nächstes Modul (ZOT) benötigt nur Phase-Konfiguration, kein Framework-Umbau</li>
-      <li>Output-Profile für andere Zieltypen vorbereitet (Service, SDK, CLI)</li>
-      <li class="open">Noch nicht an einem zweiten realen Modul validiert</li>
-    </ul>
-  </div>
-
-  <!-- 07 Monitoring & Operations -->
-  <div class="criterion">
-    <div class="chead">
-      <div class="cnum">07</div>
-      <div><div class="ctitle">Monitoring &amp; Operations</div><div class="csub">Betreibbarkeit &amp; Nachvollziehbarkeit.</div></div>
-    </div>
-    <div class="kpis">
-      <div class="kpi-item"><div class="kval">6.267</div><div class="klbl">Zeilen Audit-Trail in .migration/</div></div>
-      <div class="kpi-item"><div class="kval">8</div><div class="klbl">Git-Tags (7 Phasen + migration-complete)</div></div>
-      <div class="kpi-item"><div class="kval">46</div><div class="klbl">Phasen-Dokumente (Analyse → Plan → Verifikation)</div></div>
-      <div class="kpi-item"><div class="kval green">23</div><div class="klbl">Git-Commits mit semantischen Nachrichten</div></div>
-    </div>
-    <div class="scorebar"><div class="bar"><span style="width:94%"></span></div><div class="pct">94%</div></div>
-    <ul class="evidence">
-      <li>Jede Phase auscheckbar: <code>git checkout migrate-phase-N-complete</code></li>
-      <li>state.md als Dashboard: Phase, Fortschritt, Blocker auf einen Blick</li>
-      <li>mapping.md (188 Zeilen): C++-Klasse → Java-Package, lückenlos rückverfolgbar</li>
-      <li>Kein externes Tool nötig — alles in Git, lesbar ohne Spezialsoftware</li>
-    </ul>
-  </div>
-
-  <!-- 08 Governance & Architecture -->
-  <div class="criterion">
-    <div class="chead">
-      <div class="cnum">08</div>
-      <div><div class="ctitle">Governance &amp; Architecture</div><div class="csub">Rahmenbedingungen für eine nachhaltige Implementierung.</div></div>
-    </div>
-    <div class="kpis">
-      <div class="kpi-item"><div class="kval green">Hexagonal</div><div class="klbl">Architekturstil — erzwungen durch ArchUnit</div></div>
-      <div class="kpi-item"><div class="kval">22</div><div class="klbl">Java-Packages (aus 1 flachen Verzeichnis)</div></div>
-      <div class="kpi-item"><div class="kval">module-info</div><div class="klbl">Harte API-Grenze (nur api/ + spi/ exportiert)</div></div>
-      <div class="kpi-item"><div class="kval">4 / 10 / 107</div><div class="klbl">api · spi · internal (Schichttrennung)</div></div>
-    </div>
-    <div class="scorebar"><div class="bar"><span style="width:96%"></span></div><div class="pct">96%</div></div>
-    <ul class="evidence">
-      <li>6 ArchUnit-Regeln: No Spring, No Jakarta, API↛internal, SPI↛internal, No REST, No Boot</li>
-      <li>Domain-Reinheit automatisch erzwungen (Hook blockiert verbotene Imports)</li>
-      <li>Abhängigkeitsrichtung: nur api → internal → spi (niemals umgekehrt)</li>
-      <li>Java 25 LTS: Records, Sealed Types, Pattern Matching konsequent genutzt</li>
+      <li>Framework is agent-agnostic — same standards, three native formats</li>
+      <li>Next module (ZOT) requires only phase config, no framework changes</li>
+      <li>Output profiles prepared for other target types (Service, SDK, CLI)</li>
+      <li class="open">Not yet validated on a second real module</li>
     </ul>
   </div>
 
@@ -288,7 +220,7 @@ a{color:var(--accent-light);text-decoration:none}
   <div>
     <span style="font-size:14px;font-weight:600;color:#fff">AI Migration Framework</span>
   </div>
-  <div class="gen">Generiert am 23.07.2026 · Quelle: <code style="color:var(--lavender)">git log</code> + <code style="color:var(--lavender)">./gradlew test</code> gegen <code style="color:var(--lavender)">/home/josh/Desktop/dev/datev/ai-migration</code></div>
+  <div class="gen">Generated on 23.07.2026 · Source: <code style="color:var(--lavender)">git log</code> + <code style="color:var(--lavender)">./gradlew test</code> against <code style="color:var(--lavender)">/home/josh/Desktop/dev/datev/ai-migration</code></div>
 </div>
 
 </div>
