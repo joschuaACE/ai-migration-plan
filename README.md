@@ -37,12 +37,13 @@ This framework is not configuration-neutral. It adopts and enforces:
 
 | Agent | Mechanism | Standards | Skills | Hooks |
 |-------|-----------|-----------|--------|-------|
+| **Copilot** | `.github/copilot-instructions.md` + `.github/instructions/` + `.github/skills/` + `.github/hooks/` | ✓ | ✓ (native skills) | ✓ (native) |
 | **Kiro** | `.kiro/steering/` + `.kiro/skills/` + `.kiro/hooks/` | ✓ | ✓ (slash commands) | ✓ (native) |
 | **Claude** | `CLAUDE.md` + `.claude/settings.json` | ✓ | ✓ (workflow sections) | ✓ (native) |
 | **Codex** | `AGENTS.md` + `docs/` + `.codex/hooks.json` | ✓ | ✓ (auto-discovered) | ✓ (native) |
 
-All three agents receive the same standards, workflows, and quality hooks — formatted
-for each agent's native conventions. One source, three outputs.
+All four agents receive the same standards, workflows, and quality hooks — formatted
+for each agent's native conventions. One source, four outputs.
 
 ---
 
@@ -101,6 +102,7 @@ cpp-to-java-ai-framework/
 │   └── hooks/                  ← Quality automation definitions
 │       └── migration-quality.md
 ├── agents/
+│   ├── copilot/install.sh      ← Generates .github/ (instructions + skills + hooks)
 │   ├── kiro/install.sh         ← Generates .kiro/ (steering + skills + hooks)
 │   ├── claude/install.sh       ← Generates CLAUDE.md + .claude/settings.json
 │   ├── codex/install.sh        ← Copies AGENTS.md + docs/ + .codex/hooks.json
@@ -196,9 +198,10 @@ The knowledge is the same everywhere. Only the packaging differs.
 vim docs/standards/java-library-profile.md
 
 # Push to all your projects
-./agents/kiro/install.sh /path/to/project-a
-./agents/claude/install.sh /path/to/project-b
-./agents/codex/install.sh /path/to/project-c
+./agents/copilot/install.sh /path/to/project-a
+./agents/kiro/install.sh /path/to/project-b
+./agents/claude/install.sh /path/to/project-c
+./agents/codex/install.sh /path/to/project-d
 ```
 
 Installers are idempotent — safe to re-run anytime.

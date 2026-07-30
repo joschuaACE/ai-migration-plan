@@ -8,14 +8,16 @@ documents, bash scripts, and hook definitions.
 
 ## Key Commands
 
+- Run Copilot installer: `bash agents/copilot/install.sh /path/to/target`
 - Run Kiro installer: `bash agents/kiro/install.sh /path/to/target`
 - Run Claude installer: `bash agents/claude/install.sh /path/to/target`
 - Run Codex installer: `bash agents/codex/install.sh /path/to/target`
+- Test hook generation: `bash agents/parse-hooks.sh copilot docs/hooks app`
 - Test hook generation: `bash agents/parse-hooks.sh kiro docs/hooks app`
 - Test hook generation: `bash agents/parse-hooks.sh claude docs/hooks app`
 - Test hook generation: `bash agents/parse-hooks.sh codex docs/hooks app`
-- Validate JSON output: `bash agents/parse-hooks.sh kiro docs/hooks app | python3 -m json.tool`
-- Syntax check scripts: `bash -n agents/kiro/install.sh`
+- Validate JSON output: `bash agents/parse-hooks.sh copilot docs/hooks app | python3 -m json.tool`
+- Syntax check scripts: `bash -n agents/copilot/install.sh`
 
 ## Project Structure
 
@@ -28,6 +30,10 @@ agents/            ← Agent-specific installers + shared hook compiler
 
 ## What Each Installer Does
 
+- **copilot** (2026 native): Generates .github/copilot-instructions.md (repo-wide).
+  Creates .github/instructions/*.instructions.md with path-specific rules (applyTo frontmatter).
+  Creates .github/skills/ with SKILL.md per workflow.
+  Generates .github/hooks/*.json via parse-hooks.sh (native Copilot hook format).
 - **kiro**: Reads docs/standards/ → adds YAML frontmatter → writes .kiro/steering/.
   Reads docs/skills/ → wraps with Kiro SKILL.md frontmatter → writes .kiro/skills/.
   Reads docs/hooks/ → generates .kiro/hooks/ JSON via parse-hooks.sh.

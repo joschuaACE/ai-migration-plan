@@ -1,14 +1,14 @@
 #!/bin/bash
 # Shared hook parser — reads docs/hooks/*.md and generates agent-native JSON
 # Usage: bash parse-hooks.sh <agent> <hooks-dir> [target_root]
-#   agent: kiro | claude | codex
+#   agent: kiro | claude | codex | copilot
 #   hooks-dir: path to docs/hooks/
 #   target_root: replacement for {target_root} (default: app)
 
 set -euo pipefail
 
-AGENT="${1:?Usage: parse-hooks.sh <kiro|claude|codex> <hooks-dir> [target_root]}"
-HOOKS_DIR="${2:?Usage: parse-hooks.sh <kiro|claude|codex> <hooks-dir> [target_root]}"
+AGENT="${1:?Usage: parse-hooks.sh <kiro|claude|codex|copilot> <hooks-dir> [target_root]}"
+HOOKS_DIR="${2:?Usage: parse-hooks.sh <kiro|claude|codex|copilot> <hooks-dir> [target_root]}"
 TARGET_ROOT="${3:-app}"
 
 # Parse all hook definition files
@@ -91,6 +91,21 @@ map_trigger_codex() {
     map_trigger_claude "$1"
 }
 
+# Map portable trigger names to Copilot native event names (2026 spec)
+map_trigger_copilot() {
+    case "$1" in
+        file-save) echo "postToolUse" ;;
+        file-create) echo "postToolUse" ;;
+        file-delete) echo "postToolUse" ;;
+        pre-tool) echo "preToolUse" ;;
+        post-tool) echo "postToolUse" ;;
+        stop) echo "agentStop" ;;
+        session-start) echo "sessionStart" ;;
+        session-end) echo "sessionEnd" ;;
+        *) echo "$1" ;;
+    esac
+}
+
 # Emit hook in the appropriate agent format
 emit_hook() {
     local matcher_resolved trigger_resolved command_resolved prompt_resolved
@@ -102,6 +117,7 @@ emit_hook() {
         kiro) emit_kiro ;;
         claude) emit_claude ;;
         codex) emit_codex ;;
+        copilot) emit_copilot ;;
     esac
 }
 
@@ -245,6 +261,49 @@ finalize_codex() {
     echo -e "$result"
 }
 
+# --- COPILOT FORMAT (2026 native) ---
+# Uses version 1 JSON with hooks grouped by event type
+# Events: sessionStart, sessionEnd, userPromptSubmitted, preToolUse, postToolUse, agentStop, subagentStop, errorOccurred
+
+declare -A COPILOT_EVENTS
+
+emit_copilot() {
+    local event hook_json timeout_field
+    event="$(map_trigger_copilot "$current_trigger")"
+
+    # Copilot hooks are shell commands only (type: command)
+    # Both command and agent types become bash commands
+    if [ "$current_type" = "command" ]; then
+        timeout_field=""
+        [ -n "$current_timeout" ] && timeout_field=", \"timeoutSec\": $current_timeout"
+        hook_json="{\"type\": \"command\", \"bash\": $(json_string "$command_resolved")$timeout_field}"
+    else
+        # Agent/prompt type: wrap in a validation script pattern
+        # Copilot preToolUse hooks can deny by outputting JSON with {"decision": "deny", "reason": "..."}
+        local check_script="# $current_desc
+# Evaluate: $prompt_resolved
+exit 0"
+        hook_json="{\"type\": \"command\", \"bash\": $(json_string "$check_script"), \"timeoutSec\": 10}"
+    fi
+
+    if [ -n "${COPILOT_EVENTS[$event]:-}" ]; then
+        COPILOT_EVENTS[$event]+=", $hook_json"
+    else
+        COPILOT_EVENTS[$event]="$hook_json"
+    fi
+}
+
+finalize_copilot() {
+    local result="{\n  \"version\": 1,\n  \"hooks\": {"
+    local first=true
+    for event in "${!COPILOT_EVENTS[@]}"; do
+        if [ "$first" = true ]; then first=false; else result+=","; fi
+        result+="\n    \"$event\": [${COPILOT_EVENTS[$event]}]"
+    done
+    result+="\n  }\n}"
+    echo -e "$result"
+}
+
 # --- UTILITY ---
 
 json_string() {
@@ -263,4 +322,5 @@ case "$AGENT" in
     kiro) finalize_kiro ;;
     claude) finalize_claude ;;
     codex) finalize_codex ;;
+    copilot) finalize_copilot ;;
 esac

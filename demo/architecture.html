@@ -82,7 +82,9 @@ flowchart TB
         direction LR
         subgraph COPILOT_OUT["Copilot Agent"]
             CP1[".github/copilot-instructions.md"]
-            CP2[".github/prompts/"]
+            CP2[".github/instructions/"]
+            CP3[".github/skills/"]
+            CP4[".github/hooks/"]
         end
         subgraph KIRO_OUT["Kiro Agent"]
             K1[".kiro/steering/"]
