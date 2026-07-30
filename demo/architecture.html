@@ -3,467 +3,1175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cpp-to-java-ai-framework — Architecture Diagram</title>
+    <title>Architecture Overview — cpp-to-java-ai-framework</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            /* Primary palette */
+            --primary-900: #0c1929;
+            --primary-800: #0f2744;
+            --primary-700: #1a3a5c;
+            --primary-600: #1e4976;
+            --primary-500: #2563eb;
+            --primary-400: #3b82f6;
+            --primary-300: #60a5fa;
+            --primary-200: #93c5fd;
+            --primary-100: #dbeafe;
+            
+            /* Accent colors */
+            --emerald-500: #10b981;
+            --emerald-400: #34d399;
+            --emerald-900: #064e3b;
+            --violet-500: #8b5cf6;
+            --violet-400: #a78bfa;
+            --violet-900: #2e1065;
+            --amber-500: #f59e0b;
+            --amber-400: #fbbf24;
+            --amber-900: #451a03;
+            --rose-500: #f43f5e;
+            --rose-400: #fb7185;
+            
+            /* Neutrals */
+            --slate-950: #020617;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --slate-500: #64748b;
+            --slate-400: #94a3b8;
+            --slate-300: #cbd5e1;
+            --slate-200: #e2e8f0;
+            --slate-100: #f1f5f9;
+            --slate-50: #f8fafc;
+            
+            /* Semantic */
+            --surface-base: var(--slate-950);
+            --surface-elevated: var(--slate-900);
+            --surface-card: var(--slate-800);
+            --border-subtle: rgba(148, 163, 184, 0.1);
+            --border-default: rgba(148, 163, 184, 0.2);
+            --text-primary: var(--slate-50);
+            --text-secondary: var(--slate-400);
+            --text-muted: var(--slate-500);
+            
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --space-3xl: 64px;
+            
+            /* Typography */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+            
+            /* Effects */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+            --shadow-glow-blue: 0 0 40px rgba(59, 130, 246, 0.15);
+            --shadow-glow-emerald: 0 0 40px rgba(16, 185, 129, 0.15);
+            --shadow-glow-violet: 0 0 40px rgba(139, 92, 246, 0.15);
+            
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f1117;
-            color: #e2e8f0;
-            padding: 2rem;
+            font-family: var(--font-sans);
+            background: var(--surface-base);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
         }
-        h1 {
+        
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-md) var(--space-xl);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-500), var(--violet-500));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .logo-text {
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+        }
+        
+        .logo-text span {
+            color: var(--primary-400);
+        }
+        
+        .nav {
+            display: flex;
+            gap: var(--space-xs);
+        }
+        
+        .nav-link {
+            padding: var(--space-sm) var(--space-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: var(--slate-800);
+        }
+        
+        .nav-link.active {
+            color: var(--primary-400);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Hero */
+        .hero {
+            padding: calc(80px + var(--space-3xl)) var(--space-xl) var(--space-3xl);
             text-align: center;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            color: #f1f5f9;
+            position: relative;
+            overflow: hidden;
         }
-        .subtitle {
-            text-align: center;
-            color: #94a3b8;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            pointer-events: none;
         }
+        
+        .hero-content {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-xs) var(--space-md);
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--primary-300);
+            margin-bottom: var(--space-lg);
+        }
+        
+        .hero-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--emerald-500);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        .hero h1 {
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+            margin-bottom: var(--space-md);
+            background: linear-gradient(135deg, var(--slate-50) 0%, var(--slate-300) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Diagram Navigation */
+        .diagram-nav {
+            position: sticky;
+            top: 73px;
+            z-index: 50;
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: var(--space-md) var(--space-xl);
+            overflow-x: auto;
+        }
+        
+        .diagram-nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: var(--space-sm);
+        }
+        
+        .diagram-nav-link {
+            flex-shrink: 0;
+            padding: var(--space-sm) var(--space-md);
+            background: var(--slate-800);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        
+        .diagram-nav-link:hover {
+            background: var(--slate-700);
+            color: var(--text-primary);
+            border-color: var(--border-default);
+        }
+        
+        .diagram-nav-link.active,
+        .diagram-nav-link:target {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--primary-500);
+            color: var(--primary-300);
+        }
+        
+        /* Main Content */
+        .content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-2xl) var(--space-xl) var(--space-3xl);
+        }
+        
+        /* Diagram Sections */
         .diagram-section {
-            background: #1e2130;
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border: 1px solid #2d3348;
+            margin-bottom: var(--space-3xl);
+            scroll-margin-top: 140px;
         }
-        .diagram-section h2 {
-            color: #93c5fd;
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
+        
+        .diagram-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
-        .diagram-section p {
-            color: #94a3b8;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
+        
+        .diagram-card:hover {
+            border-color: var(--border-default);
+            box-shadow: var(--shadow-lg);
         }
+        
+        .diagram-card.glow-blue:hover { box-shadow: var(--shadow-glow-blue); }
+        .diagram-card.glow-emerald:hover { box-shadow: var(--shadow-glow-emerald); }
+        .diagram-card.glow-violet:hover { box-shadow: var(--shadow-glow-violet); }
+        
+        .diagram-header {
+            padding: var(--space-lg) var(--space-xl);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-md);
+        }
+        
+        .diagram-number {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .diagram-number.emerald {
+            background: linear-gradient(135deg, var(--emerald-900), var(--emerald-500));
+        }
+        
+        .diagram-number.violet {
+            background: linear-gradient(135deg, var(--violet-900), var(--violet-500));
+        }
+        
+        .diagram-number.amber {
+            background: linear-gradient(135deg, var(--amber-900), var(--amber-500));
+        }
+        
+        .diagram-info {
+            flex: 1;
+        }
+        
+        .diagram-title {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .diagram-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .diagram-tags {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-sm);
+        }
+        
+        .tag {
+            padding: 2px 10px;
+            background: var(--slate-800);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tag.blue { background: rgba(59, 130, 246, 0.15); color: var(--primary-300); }
+        .tag.emerald { background: rgba(16, 185, 129, 0.15); color: var(--emerald-400); }
+        .tag.violet { background: rgba(139, 92, 246, 0.15); color: var(--violet-400); }
+        .tag.amber { background: rgba(245, 158, 11, 0.15); color: var(--amber-400); }
+        
+        .diagram-body {
+            padding: var(--space-xl);
+            background: var(--surface-card);
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .mermaid {
+            width: 100%;
             display: flex;
             justify-content: center;
         }
+        
         .mermaid svg {
             max-width: 100%;
+            height: auto !important;
+        }
+        
+        /* Key Insights */
+        .insights {
+            padding: var(--space-lg) var(--space-xl);
+            border-top: 1px solid var(--border-subtle);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .insights-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--space-md);
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+        }
+        
+        .insight {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+        }
+        
+        .insight-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .insight-icon.blue { background: rgba(59, 130, 246, 0.2); }
+        .insight-icon.emerald { background: rgba(16, 185, 129, 0.2); }
+        .insight-icon.violet { background: rgba(139, 92, 246, 0.2); }
+        .insight-icon.amber { background: rgba(245, 158, 11, 0.2); }
+        
+        .insight-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .insight-text strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-xl);
+            text-align: center;
+        }
+        
+        .footer-text {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        .footer-text a {
+            color: var(--primary-400);
+            text-decoration: none;
+        }
+        
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-inner {
+                padding: var(--space-md);
+            }
+            
+            .nav {
+                display: none;
+            }
+            
+            .hero {
+                padding: calc(80px + var(--space-xl)) var(--space-md) var(--space-xl);
+            }
+            
+            .diagram-nav {
+                padding: var(--space-sm) var(--space-md);
+            }
+            
+            .content {
+                padding: var(--space-lg) var(--space-md);
+            }
+            
+            .diagram-header {
+                flex-direction: column;
+                padding: var(--space-md);
+            }
+            
+            .diagram-body {
+                padding: var(--space-md);
+            }
+            
+            .insights {
+                padding: var(--space-md);
+            }
+            
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Mermaid overrides for better dark mode */
+        .mermaid .node rect,
+        .mermaid .node circle,
+        .mermaid .node ellipse,
+        .mermaid .node polygon {
+            stroke-width: 1.5px !important;
+        }
+        
+        .mermaid .edgePath .path {
+            stroke-width: 1.5px !important;
+        }
+        
+        .mermaid .label {
+            font-family: var(--font-sans) !important;
+        }
+        
+        .mermaid .cluster rect {
+            rx: 8px !important;
+            ry: 8px !important;
         }
     </style>
 </head>
 <body>
-    <h1>cpp-to-java-ai-framework</h1>
-    <p class="subtitle">Architecture Overview — AI-Agent Framework for C++ → Java 25 Migration</p>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">cpp-to-java<span>-ai-framework</span></div>
+            </div>
+            <nav class="nav">
+                <a href="approach.html" class="nav-link">Methodology</a>
+                <a href="architecture.html" class="nav-link active">Architecture</a>
+                <a href="kpi.html" class="nav-link">KPIs</a>
+            </nav>
+        </div>
+    </header>
 
-    <!-- Diagram 1: High-Level System Architecture -->
-    <div class="diagram-section">
-        <h2>1. High-Level System Architecture</h2>
-        <p>The framework as a whole: single source of truth in docs/, agent-specific installers, and target project output.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">Architecture Diagrams</div>
+            <h1>System Architecture Overview</h1>
+            <p>Eight diagrams illustrating how the framework transforms portable knowledge into agent-native configurations for AI-assisted C++ to Java 25 migration.</p>
+        </div>
+    </section>
+
+    <!-- Diagram Navigation -->
+    <nav class="diagram-nav">
+        <div class="diagram-nav-inner">
+            <a href="#diagram-1" class="diagram-nav-link">1. High-Level System</a>
+            <a href="#diagram-2" class="diagram-nav-link">2. Migration Pipeline</a>
+            <a href="#diagram-3" class="diagram-nav-link">3. Subagent Architecture</a>
+            <a href="#diagram-4" class="diagram-nav-link">4. Knowledge Graphs</a>
+            <a href="#diagram-5" class="diagram-nav-link">5. Target Java Architecture</a>
+            <a href="#diagram-6" class="diagram-nav-link">6. Quality Hooks</a>
+            <a href="#diagram-7" class="diagram-nav-link">7. Output Profiles</a>
+            <a href="#diagram-8" class="diagram-nav-link">8. State Management</a>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="content">
+        
+        <!-- Diagram 1: High-Level System Architecture -->
+        <section id="diagram-1" class="diagram-section">
+            <div class="diagram-card glow-blue">
+                <div class="diagram-header">
+                    <div class="diagram-number">1</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">High-Level System Architecture</h2>
+                        <p class="diagram-desc">The framework as a whole: single source of truth in docs/, agent-specific installers, and target project output across four supported AI agents.</p>
+                        <div class="diagram-tags">
+                            <span class="tag blue">Core</span>
+                            <span class="tag">Multi-Agent</span>
+                            <span class="tag">Portable</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-body">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#3b82f6', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b', 'nodeBorder': '#3b82f6', 'clusterBkg': '#0f172a', 'clusterBorder': '#334155', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b' }}}%%
 flowchart TB
     subgraph SOURCE["📁 docs/ — Single Source of Truth"]
         direction LR
-        STANDARDS["standards/<br/>14 markdown files<br/>Architecture rules,<br/>Java 25 patterns,<br/>profiles, examples"]
-        SKILLS["skills/<br/>9 workflow files<br/>Step-by-step<br/>migration procedures"]
-        HOOKS["hooks/<br/>migration-quality.md<br/>Portable hook<br/>definitions"]
+        STANDARDS["standards/<br/>14 markdown files<br/>Architecture rules,<br/>Java 25 patterns"]
+        SKILLS["skills/<br/>9 workflow files<br/>Migration procedures"]
+        HOOKS["hooks/<br/>migration-quality.md<br/>Hook definitions"]
     end
 
     subgraph AGENTS["🔧 agents/ — Installer Layer"]
         direction LR
-        PARSE["parse-hooks.sh<br/>Shared hook compiler<br/>(reads hooks/ → emits JSON)"]
-        COPILOT_INST["copilot/install.sh<br/>Generates .github/"]
-        KIRO_INST["kiro/install.sh<br/>Generates .kiro/"]
-        CLAUDE_INST["claude/install.sh<br/>Generates CLAUDE.md"]
-        CODEX_INST["codex/install.sh<br/>Generates AGENTS.md"]
+        PARSE["parse-hooks.sh<br/>Shared compiler"]
+        COPILOT_INST["copilot/"]
+        KIRO_INST["kiro/"]
+        CLAUDE_INST["claude/"]
+        CODEX_INST["codex/"]
     end
 
     subgraph TARGETS["🎯 Target Project Outputs"]
         direction LR
-        subgraph COPILOT_OUT["Copilot Agent"]
-            CP1[".github/copilot-instructions.md"]
-            CP2[".github/instructions/"]
-            CP3[".github/skills/"]
-            CP4[".github/hooks/"]
+        subgraph COPILOT_OUT["Copilot"]
+            CP1[".github/"]
         end
-        subgraph KIRO_OUT["Kiro Agent"]
-            K1[".kiro/steering/"]
-            K2[".kiro/skills/"]
-            K3[".kiro/hooks/"]
+        subgraph KIRO_OUT["Kiro"]
+            K1[".kiro/"]
         end
-        subgraph CLAUDE_OUT["Claude Agent"]
+        subgraph CLAUDE_OUT["Claude"]
             C1["CLAUDE.md"]
-            C2[".claude/settings.json"]
         end
-        subgraph CODEX_OUT["Codex Agent"]
-            X1["AGENTS.md + docs/"]
-            X2[".codex/hooks.json"]
+        subgraph CODEX_OUT["Codex"]
+            X1["AGENTS.md"]
         end
     end
 
-    STANDARDS --> COPILOT_INST
-    STANDARDS --> KIRO_INST
-    STANDARDS --> CLAUDE_INST
-    STANDARDS --> CODEX_INST
-    SKILLS --> COPILOT_INST
-    SKILLS --> KIRO_INST
-    SKILLS --> CLAUDE_INST
-    SKILLS --> CODEX_INST
+    SOURCE --> AGENTS
     HOOKS --> PARSE
-    PARSE --> COPILOT_INST
-    PARSE --> KIRO_INST
-    PARSE --> CLAUDE_INST
-    PARSE --> CODEX_INST
+    PARSE --> COPILOT_INST & KIRO_INST & CLAUDE_INST & CODEX_INST
     COPILOT_INST --> COPILOT_OUT
     KIRO_INST --> KIRO_OUT
     CLAUDE_INST --> CLAUDE_OUT
     CODEX_INST --> CODEX_OUT
 
-    style SOURCE fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
-    style AGENTS fill:#1e3b2f,stroke:#22c55e,stroke-width:2px
-    style TARGETS fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
-        </pre>
-    </div>
+    style SOURCE fill:#0f2744,stroke:#3b82f6,stroke-width:2px
+    style AGENTS fill:#0f2f1f,stroke:#10b981,stroke-width:2px
+    style TARGETS fill:#2e1065,stroke:#8b5cf6,stroke-width:2px
+                    </pre>
+                </div>
+                <div class="insights">
+                    <div class="insights-title">Key Points</div>
+                    <div class="insights-grid">
+                        <div class="insight">
+                            <div class="insight-icon blue">📁</div>
+                            <div class="insight-text"><strong>Single source of truth</strong> — All knowledge lives in docs/, never in generated files</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon emerald">🔧</div>
+                            <div class="insight-text"><strong>Thin adapters</strong> — Installers only format, they don't create content</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon violet">🎯</div>
+                            <div class="insight-text"><strong>4 agents supported</strong> — Copilot, Kiro, Claude, Codex with native formats</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Diagram 2: Migration Workflow Pipeline -->
-    <div class="diagram-section">
-        <h2>2. Migration Workflow Pipeline</h2>
-        <p>The 9-step migration workflow and how skills feed into each other.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+        <!-- Diagram 2: Migration Workflow Pipeline -->
+        <section id="diagram-2" class="diagram-section">
+            <div class="diagram-card glow-emerald">
+                <div class="diagram-header" style="padding: var(--space-md) var(--space-xl);">
+                    <div class="diagram-number emerald">2</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">Migration Workflow Pipeline</h2>
+                        <p class="diagram-desc" style="margin-bottom: 0;"><strong>migrate-init</strong> runs once (scan, understand, detect, map, roadmap, skeleton) → then <strong>analyze → plan → execute → verify → review</strong> repeats per phase.</p>
+                    </div>
+                </div>
+                <div class="diagram-body" style="padding: var(--space-md) var(--space-xl); min-height: auto;">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'flowchart': {'nodeSpacing': 20, 'rankSpacing': 25}, 'themeVariables': { 'primaryColor': '#10b981', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#34d399', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b' }}}%%
 flowchart LR
-    INIT["🚀 migrate-init<br/>Scan + Understand<br/>UA + Graphify<br/>→ project skeleton"]
-    DETECT["🔍 migrate-detect<br/>Tech detection<br/>Libraries, platforms"]
-    MAP["🗺️ migrate-map<br/>Namespace → Package<br/>mapping"]
-    ANALYZE["📊 migrate-analyze<br/>Deep analysis<br/>Data flow, patterns,<br/>risks, deps"]
-    PLAN["📋 migrate-plan<br/>Translation plans<br/>Wave ordering"]
-    EXECUTE["⚡ migrate-execute<br/>Wave-based<br/>translation"]
-    VERIFY["✅ migrate-verify<br/>Semantic equivalence<br/>C++ vs Java"]
-    REVIEW["🔎 migrate-review<br/>Two-pass review<br/>Fidelity + Minimalism"]
-    RESUME["🔄 migrate-resume<br/>Session recovery"]
+    subgraph INIT["🚀 migrate-init — runs once at project start"]
+        direction LR
+        I1["📂 Scan<br/><small>Index all C++<br/>files &amp; LOC</small>"] --> I2["🧠 UA<br/><small>Knowledge graph<br/>+ domains</small>"] --> I3["🔬 Graphify<br/><small>Communities<br/>+ god nodes</small>"] --> I4["🔍 Detect<br/><small>Libraries &amp;<br/>C++ standard</small>"] --> I5["🗺️ Map<br/><small>Namespace →<br/>Java package</small>"] --> I6["📋 Roadmap<br/><small>Dependency-<br/>ordered phases</small>"] --> I7["🏗️ Skeleton<br/><small>Gradle +<br/>hexagonal</small>"]
+    end
 
-    INIT --> DETECT
-    DETECT --> MAP
-    MAP --> ANALYZE
-    ANALYZE --> PLAN
-    PLAN --> EXECUTE
-    EXECUTE --> VERIFY
-    VERIFY --> REVIEW
-    RESUME -.->|"resumes any step"| INIT
-    RESUME -.-> DETECT
-    RESUME -.-> MAP
-    RESUME -.-> ANALYZE
-    RESUME -.-> PLAN
-    RESUME -.-> EXECUTE
-    RESUME -.-> VERIFY
-    RESUME -.-> REVIEW
+    INIT -->|"N phases"| CYCLE
 
-    style INIT fill:#1e3a5f,stroke:#3b82f6
-    style DETECT fill:#1e3a5f,stroke:#3b82f6
-    style MAP fill:#1e3a5f,stroke:#3b82f6
-    style ANALYZE fill:#2d1e5f,stroke:#8b5cf6
-    style PLAN fill:#2d1e5f,stroke:#8b5cf6
-    style EXECUTE fill:#1e5f3a,stroke:#22c55e
-    style VERIFY fill:#5f4b1e,stroke:#eab308
-    style REVIEW fill:#5f4b1e,stroke:#eab308
-    style RESUME fill:#3b3b3b,stroke:#94a3b8
-        </pre>
-    </div>
+    subgraph CYCLE["🔄 Per-Phase Cycle — repeats for each phase"]
+        direction LR
+        A["📊 Analyze<br/><small>Data flow,<br/>patterns, risks</small>"] --> P["📋 Plan<br/><small>Wave-ordered<br/>translations</small>"] --> E["⚡ Execute<br/><small>Parallel agents<br/>+ build gates</small>"] --> V["✅ Verify<br/><small>Semantic<br/>equivalence</small>"] --> R["🔎 Review<br/><small>Fidelity +<br/>minimalism</small>"]
+    end
 
-    <!-- Diagram 3: Subagent Architecture -->
-    <div class="diagram-section">
-        <h2>3. Migration Subagent Architecture</h2>
-        <p>Specialized subagents spawned by workflow skills for parallel work.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+    R -->|"next"| A
+    RESUME["🔄 Resume<br/><small>Session<br/>recovery</small>"] -.-> INIT & CYCLE
+
+    style INIT fill:#0f2744,stroke:#3b82f6,stroke-width:2px
+    style CYCLE fill:#064e3b,stroke:#10b981,stroke-width:2px
+    style A fill:#2e1065,stroke:#8b5cf6
+    style P fill:#2e1065,stroke:#8b5cf6
+    style E fill:#064e3b,stroke:#10b981
+    style V fill:#451a03,stroke:#f59e0b
+    style R fill:#451a03,stroke:#f59e0b
+    style RESUME fill:#1e293b,stroke:#64748b,stroke-dasharray: 5 5
+                    </pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Diagram 3: Subagent Architecture -->
+        <section id="diagram-3" class="diagram-section">
+            <div class="diagram-card glow-violet">
+                <div class="diagram-header">
+                    <div class="diagram-number violet">3</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">Migration Subagent Architecture</h2>
+                        <p class="diagram-desc">Specialized subagents spawned by workflow skills for parallel work — scanners, detectors, and analyzers with model-appropriate allocation.</p>
+                        <div class="diagram-tags">
+                            <span class="tag violet">Parallel</span>
+                            <span class="tag">Specialized</span>
+                            <span class="tag">Multi-Model</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-body">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#8b5cf6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#a78bfa', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b' }}}%%
 flowchart TB
-    subgraph ORCHESTRATOR["Orchestrator (Main Agent)"]
+    subgraph ORCHESTRATOR["🎯 Orchestrator"]
         INIT_SK["migrate-init"]
         DETECT_SK["migrate-detect"]
         ANALYZE_SK["migrate-analyze"]
     end
 
-    subgraph SCANNERS["migration-scanner (×4 parallel, fast model)"]
-        S1["scanner-headers<br/>.h / .hpp"]
-        S2["scanner-sources<br/>.cpp / .cc"]
-        S3["scanner-build<br/>CMake, Makefile, vcxproj"]
-        S4["scanner-tests<br/>test/ dirs, *_test.cpp"]
+    subgraph SCANNERS["⚡ Scanners (×4 parallel, fast model)"]
+        S1["headers<br/>.h/.hpp"]
+        S2["sources<br/>.cpp/.cc"]
+        S3["build<br/>CMake"]
+        S4["tests<br/>*_test.cpp"]
     end
 
-    subgraph DETECTOR["migration-detector (standard model)"]
-        D1["Scan build files"]
-        D2["Classify dependencies"]
-        D3["Map Java equivalents"]
-        D4["Score risk"]
+    subgraph DETECTOR["🔍 Detector (standard model)"]
+        D1["Scan"] --> D2["Classify"] --> D3["Map"] --> D4["Score"]
     end
 
-    subgraph ANALYZERS["migration-analyzer (×4 parallel, most-capable model)"]
-        A1["analyzer-dataflow<br/>Ownership, lifetimes"]
-        A2["analyzer-patterns<br/>Design patterns, idioms"]
-        A3["analyzer-deps<br/>Call graph, interfaces"]
-        A4["analyzer-risks<br/>Unsafe ops, UB, concurrency"]
+    subgraph ANALYZERS["🧠 Analyzers (×4 parallel, capable model)"]
+        A1["dataflow<br/>Ownership"]
+        A2["patterns<br/>Design"]
+        A3["deps<br/>Call graph"]
+        A4["risks<br/>UB, concurrency"]
     end
 
-    INIT_SK --> S1 & S2 & S3 & S4
-    INIT_SK --> D1
-    DETECT_SK --> D1
-    D1 --> D2 --> D3 --> D4
-    ANALYZE_SK --> A1 & A2 & A3 & A4
+    INIT_SK --> SCANNERS
+    DETECT_SK --> DETECTOR
+    ANALYZE_SK --> ANALYZERS
 
-    S1 & S2 & S3 & S4 -->|"inventory.md"| INV[(📄 .migration/<br/>inventory.md)]
-    D4 -->|"research/"| RES[(📄 .migration/<br/>research/)]
-    A1 & A2 & A3 & A4 -->|"analysis.md"| ANA[(📄 .migration/<br/>phases/nn-analysis.md)]
+    SCANNERS -->|inventory.md| STATE[(📄 .migration/)]
+    DETECTOR -->|research/| STATE
+    ANALYZERS -->|analysis.md| STATE
 
-    style ORCHESTRATOR fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
-    style SCANNERS fill:#1e3b2f,stroke:#22c55e,stroke-width:2px
-    style DETECTOR fill:#3b2f1e,stroke:#f59e0b,stroke-width:2px
-    style ANALYZERS fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
-        </pre>
-    </div>
+    style ORCHESTRATOR fill:#0f2744,stroke:#3b82f6,stroke-width:2px
+    style SCANNERS fill:#064e3b,stroke:#10b981,stroke-width:2px
+    style DETECTOR fill:#451a03,stroke:#f59e0b,stroke-width:2px
+    style ANALYZERS fill:#2e1065,stroke:#8b5cf6,stroke-width:2px
+                    </pre>
+                </div>
+                <div class="insights">
+                    <div class="insights-title">Model Strategy</div>
+                    <div class="insights-grid">
+                        <div class="insight">
+                            <div class="insight-icon emerald">⚡</div>
+                            <div class="insight-text"><strong>Scanners</strong> — Fast model (GPT-4o-mini) for high-volume file scanning</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon amber">🔍</div>
+                            <div class="insight-text"><strong>Detector</strong> — Standard model for dependency classification</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon violet">🧠</div>
+                            <div class="insight-text"><strong>Analyzers</strong> — Most capable model for deep semantic analysis</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Diagram 4: Knowledge Graph Tooling -->
-    <div class="diagram-section">
-        <h2>4. Knowledge Graph Integration (Graphify + Understand-Anything)</h2>
-        <p>Two complementary tools that provide source understanding before and during migration.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+        <!-- Diagram 4: Knowledge Graph Integration -->
+        <section id="diagram-4" class="diagram-section">
+            <div class="diagram-card glow-blue">
+                <div class="diagram-header">
+                    <div class="diagram-number">4</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">Knowledge Graph Integration</h2>
+                        <p class="diagram-desc">Two complementary tools — Graphify for analytical backbone (community detection, drift) and Understand-Anything for human interface (tours, onboarding).</p>
+                        <div class="diagram-tags">
+                            <span class="tag blue">Graphify</span>
+                            <span class="tag emerald">UA</span>
+                            <span class="tag">Analysis</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-body">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#3b82f6', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b' }}}%%
 flowchart TB
-    CPP["📂 C++ Source Code"]
-    JAVA["📂 Java Target Code"]
+    CPP["📂 C++ Source"]
+    JAVA["📂 Java Target"]
 
     subgraph GRAPHIFY["🔬 Graphify — Analytical Backbone"]
-        direction TB
-        G_SRC["source mode<br/>(migrate-init)"]
-        G_TGT["target mode<br/>(migrate-execute)"]
-        G_CMP["compare mode<br/>(migrate-verify)"]
-        G_ARC["arc42 mode<br/>(migrate-review)"]
-        G_QRY["query mode<br/>(inline, any skill)"]
-        G_OUT["Outputs:<br/>• Community detection (Leiden)<br/>• God node analysis<br/>• Edge confidence tiers<br/>• Surprising connections<br/>• BFS/DFS traversal"]
+        G_SRC["source mode"]
+        G_TGT["target mode"]
+        G_CMP["compare mode"]
+        G_OUT["Community detection<br/>God node analysis<br/>Drift detection"]
     end
 
     subgraph UA["🧠 Understand-Anything — Human Interface"]
-        direction TB
-        UA_GRAPH["Knowledge graph<br/>Interactive dashboard"]
-        UA_TOUR["Guided tours<br/>Dependency-ordered"]
-        UA_DOMAIN["Domain extraction<br/>Business processes"]
-        UA_ONBOARD["Onboarding guide<br/>New team members"]
-        UA_DIFF["Diff impact<br/>Ripple effects"]
+        UA_GRAPH["Knowledge graph"]
+        UA_TOUR["Guided tours"]
+        UA_DOMAIN["Domain extraction"]
+        UA_ONBOARD["Onboarding"]
     end
 
-    CPP --> G_SRC
-    CPP --> UA_GRAPH
+    CPP --> G_SRC & UA_GRAPH
     JAVA --> G_TGT
     G_SRC --> G_CMP
     G_TGT --> G_CMP
-    G_CMP -->|"drift detection"| DRIFT["⚠️ Architectural<br/>Drift Report"]
-    G_ARC -->|"generates"| ARC42["📖 ARC42<br/>Documentation"]
-    UA_GRAPH --> UA_TOUR
-    UA_GRAPH --> UA_DOMAIN
-    UA_GRAPH --> UA_ONBOARD
+    G_CMP --> DRIFT["⚠️ Drift Report"]
+    UA_GRAPH --> UA_TOUR & UA_DOMAIN & UA_ONBOARD
 
-    subgraph STORAGE[".migration/graphs/"]
-        SG["source/graph.json"]
-        TG["target/graph.json"]
-        CG["comparison/drift-report.md"]
-    end
+    style GRAPHIFY fill:#0f2744,stroke:#3b82f6,stroke-width:2px
+    style UA fill:#064e3b,stroke:#10b981,stroke-width:2px
+                    </pre>
+                </div>
+                <div class="insights">
+                    <div class="insights-title">Integration Points</div>
+                    <div class="insights-grid">
+                        <div class="insight">
+                            <div class="insight-icon blue">🔬</div>
+                            <div class="insight-text"><strong>Graphify</strong> — Runs during init, execute, verify for structural analysis</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon emerald">🧠</div>
+                            <div class="insight-text"><strong>Understand-Anything</strong> — Interactive dashboard for exploration</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon amber">⚠️</div>
+                            <div class="insight-text"><strong>Drift detection</strong> — Compares C++/Java graphs to catch divergence</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    G_SRC --> SG
-    G_TGT --> TG
-    G_CMP --> CG
-
-    style GRAPHIFY fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
-    style UA fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
-    style STORAGE fill:#2d2d2d,stroke:#64748b
-        </pre>
-    </div>
-
-    <!-- Diagram 5: Target Java Architecture (what gets generated) -->
-    <div class="diagram-section">
-        <h2>5. Target Java Architecture — Hexagonal (Service Profile)</h2>
-        <p>The opinionated architecture enforced by the framework in migrated services.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+        <!-- Diagram 5: Target Java Architecture -->
+        <section id="diagram-5" class="diagram-section">
+            <div class="diagram-card glow-emerald">
+                <div class="diagram-header">
+                    <div class="diagram-number emerald">5</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">Target Java Architecture — Hexagonal</h2>
+                        <p class="diagram-desc">The opinionated architecture enforced by the framework in migrated services — pure domain core, ports and adapters, ArchUnit enforcement.</p>
+                        <div class="diagram-tags">
+                            <span class="tag emerald">Service Profile</span>
+                            <span class="tag">Hexagonal</span>
+                            <span class="tag">ArchUnit</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-body">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#10b981', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#34d399', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b' }}}%%
 flowchart TB
-    subgraph ADAPTERS_IN["Adapter IN (Driving)"]
-        REST["REST Controllers<br/>Spring MVC"]
-        CLI_A["CLI Commands<br/>Picocli"]
-        GRPC["gRPC Services"]
-        MSG_IN["Message Listeners<br/>Kafka/SQS"]
+    subgraph IN["⬅️ Adapters IN (Driving)"]
+        REST["REST<br/>Spring MVC"]
+        GRPC["gRPC"]
+        MSG_IN["Message<br/>Listeners"]
     end
 
-    subgraph APP["Application Layer"]
-        USECASES["Use Cases<br/>(Orchestration)"]
-        DTO["DTOs + Mappers"]
+    subgraph DOMAIN["🏛️ Domain (Pure Java)"]
+        PORTS_IN["port/in/"]
+        ENTITIES["Entities<br/>Records"]
+        DOMAIN_SVC["Domain<br/>Services"]
+        PORTS_OUT["port/out/"]
     end
 
-    subgraph DOMAIN["🏛️ Domain (Pure Java — No Frameworks)"]
-        direction TB
-        PORTS_IN["port/in/<br/>Use Case Interfaces"]
-        ENTITIES["Entities<br/>Records, Sealed Types"]
-        VALUE["Value Objects"]
-        DOMAIN_SVC["Domain Services"]
-        PORTS_OUT["port/out/<br/>Repository Interfaces"]
+    subgraph OUT["➡️ Adapters OUT (Driven)"]
+        DB["JPA/JDBC"]
+        HTTP["HTTP Clients"]
+        MSG_OUT["Publishers"]
     end
 
-    subgraph ADAPTERS_OUT["Adapter OUT (Driven)"]
-        DB["JPA/JDBC<br/>PostgreSQL"]
-        HTTP["HTTP Clients<br/>java.net.http"]
-        MSG_OUT["Message Publishers<br/>Kafka/SQS"]
-        FS["File System"]
-    end
+    IN -->|calls| PORTS_IN
+    PORTS_IN --> ENTITIES --> DOMAIN_SVC --> PORTS_OUT
+    PORTS_OUT -->|implemented by| OUT
 
-    ADAPTERS_IN -->|"calls"| PORTS_IN
-    PORTS_IN --> USECASES
-    USECASES --> ENTITIES & VALUE & DOMAIN_SVC
-    DOMAIN_SVC --> PORTS_OUT
-    PORTS_OUT -->|"implemented by"| ADAPTERS_OUT
+    ARCHUNIT["🛡️ ArchUnit"] -.->|enforces boundaries| DOMAIN
 
-    ARCHUNIT["🛡️ ArchUnit<br/>Enforces boundaries"]
-    ARCHUNIT -.->|"domain has ZERO<br/>framework imports"| DOMAIN
-    ARCHUNIT -.->|"adapters never<br/>bypass ports"| ADAPTERS_IN
-    ARCHUNIT -.->|"direction: always<br/>inward"| ADAPTERS_OUT
+    style DOMAIN fill:#0f2744,stroke:#3b82f6,stroke-width:3px
+    style IN fill:#064e3b,stroke:#10b981,stroke-width:2px
+    style OUT fill:#451a03,stroke:#f59e0b,stroke-width:2px
+                    </pre>
+                </div>
+                <div class="insights">
+                    <div class="insights-title">Architecture Rules</div>
+                    <div class="insights-grid">
+                        <div class="insight">
+                            <div class="insight-icon blue">🏛️</div>
+                            <div class="insight-text"><strong>Domain purity</strong> — Zero framework imports in domain layer</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon emerald">⬅️</div>
+                            <div class="insight-text"><strong>Dependency direction</strong> — Always inward, never outward</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon amber">🛡️</div>
+                            <div class="insight-text"><strong>ArchUnit enforced</strong> — Automated boundary checks on every build</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    style DOMAIN fill:#1e3a5f,stroke:#3b82f6,stroke-width:3px
-    style APP fill:#2d1e5f,stroke:#8b5cf6,stroke-width:2px
-    style ADAPTERS_IN fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
-    style ADAPTERS_OUT fill:#3b2f1e,stroke:#f59e0b,stroke-width:2px
-        </pre>
-    </div>
-
-    <!-- Diagram 6: Quality Hooks System -->
-    <div class="diagram-section">
-        <h2>6. Quality Hooks System</h2>
-        <p>Automated checks that run during migration — same logic, three native formats.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+        <!-- Diagram 6: Quality Hooks System -->
+        <section id="diagram-6" class="diagram-section">
+            <div class="diagram-card glow-violet">
+                <div class="diagram-header">
+                    <div class="diagram-number violet">6</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">Quality Hooks System</h2>
+                        <p class="diagram-desc">Automated checks that run during migration — same logic defined once, compiled to three native formats via parse-hooks.sh.</p>
+                        <div class="diagram-tags">
+                            <span class="tag violet">Automation</span>
+                            <span class="tag">Portable</span>
+                            <span class="tag">Real-time</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-body">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#8b5cf6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#a78bfa', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b' }}}%%
 flowchart LR
-    subgraph HOOKS_SRC["docs/hooks/migration-quality.md"]
-        H1["compile-on-save<br/>trigger: file-save<br/>type: command"]
-        H2["domain-purity-check<br/>trigger: file-create<br/>type: agent"]
-        H3["architecture-direction-check<br/>trigger: file-save<br/>type: agent"]
-        H4["test-companion-reminder<br/>trigger: file-create<br/>type: agent"]
+    subgraph SRC["📄 docs/hooks/"]
+        H1["compile-on-save"]
+        H2["domain-purity"]
+        H3["arch-direction"]
+        H4["test-companion"]
     end
 
-    PARSE["parse-hooks.sh<br/>Shared compiler"]
+    PARSE["🔧 parse-hooks.sh"]
 
-    subgraph OUTPUT["Agent-Native Formats"]
-        KIRO_H[".kiro/hooks/<br/>JSON array"]
-        CLAUDE_H[".claude/settings.json<br/>customInstructions + commands"]
-        CODEX_H[".codex/hooks.json<br/>Hook definitions"]
+    subgraph OUTPUT["Agent Formats"]
+        KIRO_H[".kiro/hooks/"]
+        CLAUDE_H[".claude/settings.json"]
+        CODEX_H[".codex/hooks.json"]
     end
 
-    H1 & H2 & H3 & H4 --> PARSE
-    PARSE -->|"--format kiro"| KIRO_H
-    PARSE -->|"--format claude"| CLAUDE_H
-    PARSE -->|"--format codex"| CODEX_H
-
-    subgraph RUNTIME["Runtime Behavior"]
-        EVT["File Event<br/>(save/create)"]
-        CHECK{"Matcher<br/>matches?"}
-        CMD["Run Command<br/>(gradlew compileJava)"]
-        AGENT["Spawn Agent Check<br/>(domain purity, etc.)"]
+    subgraph RUNTIME["⚡ Runtime"]
+        EVT["File Event"]
+        CMD["Run Command"]
+        AGENT["Agent Check"]
     end
 
-    KIRO_H & CLAUDE_H & CODEX_H -.-> EVT
-    EVT --> CHECK
-    CHECK -->|"type: command"| CMD
-    CHECK -->|"type: agent"| AGENT
+    SRC --> PARSE --> OUTPUT
+    OUTPUT --> EVT --> CMD & AGENT
 
-    style HOOKS_SRC fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
-    style OUTPUT fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
-    style RUNTIME fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
-        </pre>
-    </div>
+    style SRC fill:#0f2744,stroke:#3b82f6,stroke-width:2px
+    style OUTPUT fill:#2e1065,stroke:#8b5cf6,stroke-width:2px
+    style RUNTIME fill:#064e3b,stroke:#10b981,stroke-width:2px
+                    </pre>
+                </div>
+                <div class="insights">
+                    <div class="insights-title">Hook Types</div>
+                    <div class="insights-grid">
+                        <div class="insight">
+                            <div class="insight-icon blue">⚙️</div>
+                            <div class="insight-text"><strong>compile-on-save</strong> — Runs gradlew compileJava on file save</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon violet">🏛️</div>
+                            <div class="insight-text"><strong>domain-purity</strong> — Rejects Spring imports in domain/</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon emerald">📝</div>
+                            <div class="insight-text"><strong>test-companion</strong> — Ensures test file exists for each class</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Diagram 7: Output Types -->
-    <div class="diagram-section">
-        <h2>7. Output Type Profiles</h2>
-        <p>Four target artifact types — the framework adapts architecture and tooling per type.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+        <!-- Diagram 7: Output Type Profiles -->
+        <section id="diagram-7" class="diagram-section">
+            <div class="diagram-card">
+                <div class="diagram-header">
+                    <div class="diagram-number amber">7</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">Output Type Profiles</h2>
+                        <p class="diagram-desc">Four target artifact types — the framework adapts architecture, tooling, and validation rules based on the migration target.</p>
+                        <div class="diagram-tags">
+                            <span class="tag amber">Profiles</span>
+                            <span class="tag">Service</span>
+                            <span class="tag">Library</span>
+                            <span class="tag">SDK</span>
+                            <span class="tag">CLI</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-body">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#f59e0b', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#fbbf24', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b' }}}%%
 flowchart TB
-    CPP["C++ Source<br/>(any type)"]
+    CPP["📂 C++ Source"]
 
     CPP --> SVC & LIB & SDK & CLI
 
     subgraph SVC["🖥️ Service"]
-        SVC_D["Spring Boot 4.x<br/>Hexagonal Architecture<br/>Virtual Threads<br/>Full Observability<br/>REST/gRPC adapters"]
+        SVC_D["Spring Boot 4.x<br/>Hexagonal<br/>Virtual Threads"]
     end
 
     subgraph LIB["📚 Library"]
-        LIB_D["Plain JAR<br/>api/internal/spi layering<br/>module-info.java<br/>Zero framework lock-in<br/>No @SpringBootApplication"]
+        LIB_D["Plain JAR<br/>api/internal/spi<br/>module-info.java"]
     end
 
     subgraph SDK["🧰 SDK"]
-        SDK_D["Library +<br/>Javadoc (100% public API)<br/>@Stable/@Beta/@Internal<br/>Binary compatibility (japicmp)<br/>Samples module"]
+        SDK_D["Library +<br/>Javadoc 100%<br/>Binary compat"]
     end
 
-    subgraph CLI_T["⌨️ CLI"]
-        CLI_D["Picocli commands<br/>GraalVM native image<br/>stdout/stderr contracts<br/>Exit codes<br/>Shell completions"]
+    subgraph CLI["⌨️ CLI"]
+        CLI_D["Picocli<br/>GraalVM native<br/>Exit codes"]
     end
 
-    subgraph COMMON["Common to All Types"]
-        COM["Java 25 features<br/>Records, Sealed types<br/>Pattern matching<br/>Scoped values<br/>Behavioral equivalence<br/>Test-first migration"]
+    subgraph COMMON["Java 25 Common"]
+        COM["Records · Sealed · Patterns<br/>Virtual threads · Scoped values"]
     end
 
     SVC ~~~ COMMON
     LIB ~~~ COMMON
-    SDK ~~~ COMMON
-    CLI_T ~~~ COMMON
 
-    style SVC fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
-    style LIB fill:#1e5f3a,stroke:#22c55e,stroke-width:2px
-    style SDK fill:#3b2f1e,stroke:#f59e0b,stroke-width:2px
-    style CLI_T fill:#3b1e3f,stroke:#a855f7,stroke-width:2px
-    style COMMON fill:#2d2d2d,stroke:#94a3b8,stroke-width:1px,stroke-dasharray: 5 5
-        </pre>
-    </div>
+    style SVC fill:#0f2744,stroke:#3b82f6,stroke-width:2px
+    style LIB fill:#064e3b,stroke:#10b981,stroke-width:2px
+    style SDK fill:#451a03,stroke:#f59e0b,stroke-width:2px
+    style CLI fill:#2e1065,stroke:#8b5cf6,stroke-width:2px
+    style COMMON fill:#1e293b,stroke:#475569,stroke-width:1px,stroke-dasharray: 5 5
+                    </pre>
+                </div>
+                <div class="insights">
+                    <div class="insights-title">Profile Characteristics</div>
+                    <div class="insights-grid">
+                        <div class="insight">
+                            <div class="insight-icon blue">🖥️</div>
+                            <div class="insight-text"><strong>Service</strong> — Full Spring Boot with hexagonal, REST/gRPC adapters</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon emerald">📚</div>
+                            <div class="insight-text"><strong>Library</strong> — Zero framework lock-in, JPMS module boundaries</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon amber">🧰</div>
+                            <div class="insight-text"><strong>SDK</strong> — Library + Javadoc + stability annotations + samples</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon violet">⌨️</div>
+                            <div class="insight-text"><strong>CLI</strong> — Picocli + GraalVM native image + shell completions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Diagram 8: State Management -->
-    <div class="diagram-section">
-        <h2>8. Migration State (.migration/ Directory)</h2>
-        <p>Persistent state that tracks progress, decisions, and artifacts across sessions.</p>
-        <pre class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b' }}}%%
+        <!-- Diagram 8: State Management -->
+        <section id="diagram-8" class="diagram-section">
+            <div class="diagram-card glow-blue">
+                <div class="diagram-header">
+                    <div class="diagram-number">8</div>
+                    <div class="diagram-info">
+                        <h2 class="diagram-title">Migration State Management</h2>
+                        <p class="diagram-desc">Persistent state in .migration/ directory that tracks progress, decisions, and artifacts across sessions — enabling resume and audit.</p>
+                        <div class="diagram-tags">
+                            <span class="tag blue">State</span>
+                            <span class="tag">Persistent</span>
+                            <span class="tag">Resumable</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-body">
+                    <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#3b82f6', 'lineColor': '#475569', 'secondaryColor': '#1e293b', 'tertiaryColor': '#1e293b', 'background': '#1e293b', 'mainBkg': '#1e293b' }}}%%
 flowchart TB
     subgraph STATE[".migration/ — Persistent State"]
-        direction TB
-        CONFIG["config.json<br/>output_type, target_root,<br/>source_root"]
-        STATE_MD["state.md<br/>Current phase, wave,<br/>completion %"]
-        INV["inventory.md<br/>All C++ files classified"]
-        DEC["decisions.md<br/>Every architectural divergence"]
+        CONFIG["config.json<br/>output_type, paths"]
+        STATE_MD["state.md<br/>Phase, wave, %"]
+        INV["inventory.md"]
+        DEC["decisions.md"]
 
         subgraph RESEARCH["research/"]
-            LEGACY["legacy-stack.md"]
-            DEPMAP["dependency-map.md"]
-            RISK["risk-matrix.md"]
+            R1["legacy-stack.md"]
+            R2["risk-matrix.md"]
         end
 
         subgraph PHASES["phases/"]
-            P_PLAN["nn-plan.md<br/>Wave ordering"]
-            P_ANALYSIS["nn-analysis.md<br/>Deep analysis"]
-            P_PROGRESS["nn-progress.md<br/>File-by-file status"]
+            P1["nn-plan.md"]
+            P2["nn-progress.md"]
         end
 
         subgraph GRAPHS["graphs/"]
-            G_SRC["source/<br/>C++ architecture graph"]
-            G_TGT["target/<br/>Java architecture graph"]
-            G_CMP["comparison/<br/>Drift report"]
+            G1["source/"]
+            G2["target/"]
+            G3["comparison/"]
         end
     end
 
-    SKILLS_RUN["Workflow Skills<br/>(read & write state)"]
-    RESUME_SK["migrate-resume<br/>(reads state to recover)"]
+    SKILLS["Workflow Skills"]
+    RESUME["migrate-resume"]
 
-    SKILLS_RUN --> STATE
-    RESUME_SK -->|"restores context from"| STATE
+    SKILLS --> STATE
+    RESUME -->|"restores context"| STATE
 
-    style STATE fill:#1e293b,stroke:#3b82f6,stroke-width:2px
-    style RESEARCH fill:#2d2d2d,stroke:#64748b
-    style PHASES fill:#2d2d2d,stroke:#64748b
-    style GRAPHS fill:#2d2d2d,stroke:#64748b
-        </pre>
-    </div>
+    style STATE fill:#0f172a,stroke:#3b82f6,stroke-width:2px
+    style RESEARCH fill:#1e293b,stroke:#475569
+    style PHASES fill:#1e293b,stroke:#475569
+    style GRAPHS fill:#1e293b,stroke:#475569
+                    </pre>
+                </div>
+                <div class="insights">
+                    <div class="insights-title">State Files</div>
+                    <div class="insights-grid">
+                        <div class="insight">
+                            <div class="insight-icon blue">⚙️</div>
+                            <div class="insight-text"><strong>config.json</strong> — Output type, source/target roots, agent config</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon emerald">📊</div>
+                            <div class="insight-text"><strong>state.md</strong> — Current phase, wave, completion percentage</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon violet">📝</div>
+                            <div class="insight-text"><strong>decisions.md</strong> — Every architectural divergence documented</div>
+                        </div>
+                        <div class="insight">
+                            <div class="insight-icon amber">🔄</div>
+                            <div class="insight-text"><strong>migrate-resume</strong> — Full context restoration from state</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-text">
+            cpp-to-java-ai-framework · Architecture Documentation · 
+            <a href="https://github.com">View on GitHub</a>
+        </p>
+    </footer>
 
     <script>
         mermaid.initialize({
@@ -473,9 +1181,39 @@ flowchart TB
             flowchart: {
                 useMaxWidth: true,
                 htmlLabels: true,
-                curve: 'basis'
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            themeVariables: {
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                fontSize: '14px'
             }
         });
+
+        // Highlight active nav link on scroll
+        const sections = document.querySelectorAll('.diagram-section');
+        const navLinks = document.querySelectorAll('.diagram-nav-link');
+        
+        const observerOptions = {
+            root: null,
+            rootMargin: '-20% 0px -60% 0px',
+            threshold: 0
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    navLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+                    });
+                }
+            });
+        }, observerOptions);
+        
+        sections.forEach(section => observer.observe(section));
     </script>
 </body>
 </html>
